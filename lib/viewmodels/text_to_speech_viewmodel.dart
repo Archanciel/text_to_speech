@@ -51,11 +51,30 @@ class TextToSpeechViewModel extends ChangeNotifier {
   Future<void> _initializeViewModel() async {
     try {
       print('=== DEBUT INITIALISATION VIEWMODEL ===');
-      _availableVoices = await _ttsService.getAvailableVoices();
-      print('Voix récupérées: ${_availableVoices.length}');
+      final allVoices = await _ttsService.getAvailableVoices();
+      
+      // Filtrer pour ne garder que les voix qui ont plus de chances de fonctionner
+      _availableVoices = allVoices.where((voice) {
+        // Prioriser les voix fr-CA (Olivier) qui fonctionnent
+        if (voice.locale.code == 'fr-CA') return true;
+        // Inclure quelques autres voix françaises communes
+        if (voice.locale.code == 'fr-FR' && voice.name.contains('Standard')) return true;
+        // Exclure les voix WaveNet qui peuvent nécessiter des permissions spéciales
+        if (voice.name.contains('WaveNet')) return false;
+        // Inclure les autres voix françaises
+        return voice.locale.code.startsWith('fr-');
+      }).toList();
+      
+      print('Voix filtrées disponibles: ${_availableVoices.length}');
+      
       if (_availableVoices.isNotEmpty) {
-        _selectedVoice = _availableVoices.first;
-        print('Voix sélectionnée: ${_selectedVoice!.name}');
+        // Sélectionner Olivier (fr-CA) par défaut s'il est disponible
+        final olivierVoice = _availableVoices.where((v) => 
+          v.name.toLowerCase().contains('oliver')
+        ).toList();
+        
+        _selectedVoice = olivierVoice.isNotEmpty ? olivierVoice.first : _availableVoices.first;
+        print('Voix sélectionnée par défaut: ${_selectedVoice!.name} (${_selectedVoice!.locale.code})');
       }
       print('=== VIEWMODEL INITIALISE ===');
       notifyListeners();
