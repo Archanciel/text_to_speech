@@ -50,13 +50,19 @@ class TextToSpeechViewModel extends ChangeNotifier {
 
   Future<void> _initializeViewModel() async {
     try {
+      print('=== DEBUT INITIALISATION VIEWMODEL ===');
       _availableVoices = await _ttsService.getAvailableVoices();
+      print('Voix récupérées: ${_availableVoices.length}');
       if (_availableVoices.isNotEmpty) {
         _selectedVoice = _availableVoices.first;
+        print('Voix sélectionnée: ${_selectedVoice!.name}');
       }
+      print('=== VIEWMODEL INITIALISE ===');
       notifyListeners();
     } catch (e) {
-      print('Erreur lors de l\'initialisation: $e');
+      print('Erreur lors de l\'initialisation du ViewModel: $e');
+      // Ne pas bloquer l'app, continuer sans voix
+      notifyListeners();
     }
   }
 

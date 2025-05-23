@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:cloud_text_to_speech/cloud_text_to_speech.dart';
 import 'package:file_picker/file_picker.dart';
 import '../models/audio_file.dart';
@@ -6,9 +7,8 @@ import '../models/audio_file.dart';
 class TextToSpeechService {
   bool _isInitialized = false;
   
-  // Vous devez obtenir une clé API Google Cloud
-  // Instructions : https://cloud.google.com/text-to-speech/docs/quickstart
-  final String _apiKey = 'AIzaSyCcj0KjrlTuj8a6JTdowDMODjZSlTGVGvo'; // À remplacer par votre vraie clé API
+  // Votre clé API Google Cloud fonctionnelle
+  final String _apiKey = 'AIzaSyCcj0KjrlTuj8a6JTdowDMODjZSlTGVGvo';
 
   TextToSpeechService() {
     _initTts();
@@ -16,21 +16,29 @@ class TextToSpeechService {
 
   Future<void> _initTts() async {
     try {
-      // Vérifier que la clé API n'est pas celle par défaut
-      if (_apiKey == 'AIzaSyCcj0KjrlTuj8a6JTdowDMODjZSlTGVGvo' || _apiKey.isEmpty) {
-        print('ERREUR: Veuillez configurer une vraie clé API Google Cloud');
-        return;
-      }
-
+      print('=== DEBUT INITIALISATION TTS ===');
+      print('Clé API: ${_apiKey.substring(0, 15)}...');
+      print('Longueur clé: ${_apiKey.length}');
+      
       // Initialiser Google Text-to-Speech
       TtsGoogle.init(
         apiKey: _apiKey,
         withLogs: true,
       );
       
-      // Tester la connexion
-      print('Initialisation TTS réussie avec la clé: ${_apiKey.substring(0, 10)}...');
-      _isInitialized = true;
+      print('TTS initialisé, test de connexion...');
+      
+      // Test simple pour vérifier que ça marche
+      try {
+        final testVoices = await TtsGoogle.getVoices();
+        print('Test réussi! Nombre de voix: ${testVoices.voices.length}');
+        _isInitialized = true;
+        print('=== TTS INITIALISE AVEC SUCCES ===');
+      } catch (testError) {
+        print('Erreur lors du test: $testError');
+        _isInitialized = false;
+      }
+      
     } catch (e) {
       print('Erreur lors de l\'initialisation TTS: $e');
       _isInitialized = false;
@@ -193,7 +201,7 @@ class TextToSpeechService {
   // Méthode pour tester la clé API
   Future<bool> testApiKey() async {
     try {
-      if (_apiKey == 'AIzaSyCcj0KjrlTuj8a6JTdowDMODjZSlTGVGvo' || _apiKey.isEmpty) {
+      if (_apiKey == 'VOTRE_CLE_API_GOOGLE_CLOUD' || _apiKey.isEmpty) {
         return false;
       }
 
