@@ -15,6 +15,12 @@ class TextToSpeechService {
   }
 
   Future<void> _initTts() async {
+    // Éviter la double initialisation
+    if (_isInitialized) {
+      print('TTS déjà initialisé, skip');
+      return;
+    }
+
     try {
       print('=== DEBUT INITIALISATION TTS ===');
       print('Clé API: ${_apiKey.substring(0, 15)}...');
@@ -27,6 +33,7 @@ class TextToSpeechService {
       );
       
       print('TTS initialisé, test de connexion...');
+      _isInitialized = true;
       
       // Test simple pour vérifier que ça marche
       try {
@@ -123,6 +130,7 @@ class TextToSpeechService {
   }
 
   Future<List<VoiceGoogle>> getAvailableVoices() async {
+    // Attendre que l'initialisation soit terminée
     if (!_isInitialized) {
       await _initTts();
     }
@@ -132,12 +140,16 @@ class TextToSpeechService {
     }
 
     try {
+      print('Récupération des voix...');
       final voicesResponse = await TtsGoogle.getVoices();
       final allVoices = voicesResponse.voices;
       
       // Filtrer les voix françaises en premier, puis toutes les autres
       final frenchVoices = allVoices.where((voice) => voice.locale.code.startsWith("fr-")).toList();
       final otherVoices = allVoices.where((voice) => !voice.locale.code.startsWith("fr-")).toList();
+      
+      print('Voix françaises trouvées: ${frenchVoices.length}');
+      print('Autres voix: ${otherVoices.length}');
       
       // Retourner les voix françaises en premier
       return [...frenchVoices, ...otherVoices];
