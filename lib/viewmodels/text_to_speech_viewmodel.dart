@@ -90,6 +90,28 @@ class TextToSpeechViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> speakText() async {
+    if (_inputText.trim().isEmpty) return;
+    // Pour la lecture directe, on peut utiliser le TTS simple
+    // ou créer une méthode dans le service pour la lecture temporaire
+    try {
+      // Utiliser une méthode simple de lecture sans sauvegarde
+      print('Lecture du texte: $_inputText');
+      // Note: Vous pouvez implémenter une méthode de lecture directe ici
+    } catch (e) {
+      print('Erreur lors de la lecture: $e');
+    }
+  }
+
+  Future<void> stopSpeaking() async {
+    try {
+      await stopAudio();
+      print('Lecture arrêtée');
+    } catch (e) {
+      print('Erreur lors de l\'arrêt: $e');
+    }
+  }
+
   Future<void> convertTextToMP3WithFileName(String fileName) async {
     if (_inputText.trim().isEmpty) return;
 

@@ -108,22 +108,45 @@ class TextToSpeechView extends StatelessWidget {
   Widget _buildControlButtons(BuildContext context, TextToSpeechViewModel viewModel) {
     return Column(
       children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            ElevatedButton.icon(
+              onPressed: viewModel.inputText.trim().isEmpty ? null : viewModel.speakText,
+              icon: Icon(Icons.volume_up),
+              label: Text('Écouter'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+              ),
+            ),
+            ElevatedButton.icon(
+              onPressed: viewModel.inputText.trim().isEmpty
+                  ? null
+                  : () => _showFileNameDialog(context, viewModel),
+              icon: viewModel.isConverting
+                  ? SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Icon(Icons.audiotrack),
+              label: Text(viewModel.isConverting ? 'Génération du MP3...' : 'Créer fichier MP3'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: 10),
         ElevatedButton.icon(
-          onPressed: viewModel.isConverting || viewModel.inputText.trim().isEmpty
-              ? null
-              : () => _showFileNameDialog(context, viewModel),
-          icon: viewModel.isConverting
-              ? SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : Icon(Icons.audiotrack),
-          label: Text(viewModel.isConverting ? 'Génération du MP3...' : 'Créer fichier MP3'),
+          onPressed: viewModel.stopSpeaking,
+          icon: Icon(Icons.stop),
+          label: Text('Arrêter la lecture'),
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.blue,
+            backgroundColor: Colors.red,
             foregroundColor: Colors.white,
-            minimumSize: Size(double.infinity, 48),
           ),
         ),
       ],
