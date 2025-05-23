@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:path/path.dart';
 import 'package:provider/provider.dart';
 import '../viewmodels/text_to_speech_viewmodel.dart';
 import '../models/audio_file.dart';
@@ -271,5 +272,84 @@ class TextToSpeechView extends StatelessWidget {
         },
       ),
     );
+  }
+
+  Future<void> _showFileNameDialog(BuildContext context, TextToSpeechViewModel viewModel) async {
+    final TextEditingController fileNameController = TextEditingController();
+    
+    // Afficher le dialog pour saisir le nom du fichier
+    final fileName = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Nom du fichier'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Entrez le nom du fichier audio:'),
+            SizedBox(height: 16),
+            TextField(
+              controller: fileNameController,
+              decoration: InputDecoration(
+                hintText: 'mon_audio',
+                border: OutlineInputBorder(),
+                suffixText: '.wav',
+              ),
+              autofocus: true,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('Annuler'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final name = fileNameController.text.trim();
+              if (name.isNotEmpty) {
+                Navigator.of(context).pop(name);
+              }
+            },
+            child: Text('Continuer'),
+          ),
+        ],
+      ),
+    );
+
+    if (fileName != null && fileName.trim().isNotEmpty) {
+      // Lancer la conversion avec le nom de fichier personnalisé
+      try {
+        await viewModel.convertTextToAudioWithFileName(fileName);
+        
+        if (viewModel.currentAudioFile != null) {
+          // Afficher un message de succès
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Fichier audio sauvegardé avec succès !'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        } else {
+          // Afficher un message d'annulation
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Sauvegarde annulée'),
+              backgroundColor: Colors.orange,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      } catch (e) {
+        // Afficher un message d'erreur
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur lors de la conversion'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    }
   }
 }

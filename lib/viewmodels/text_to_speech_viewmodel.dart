@@ -21,8 +21,18 @@ class TextToSpeechViewModel extends ChangeNotifier {
   // Getters
   String get inputText => _inputText;
   bool get isConverting => _isConverting;
+  set isConverting(bool value) {
+    _isConverting = value;
+    notifyListeners();
+  }
+
   bool get isPlaying => _isPlaying;
   AudioFile? get currentAudioFile => _currentAudioFile;
+  set currentAudioFile(AudioFile? audioFile) {
+    _currentAudioFile = audioFile;
+    notifyListeners();
+  }
+
   List<AudioFile> get audioHistory => _audioHistory;
   String get selectedLanguage => _selectedLanguage;
   double get speechRate => _speechRate;
@@ -51,6 +61,27 @@ class TextToSpeechViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> convertTextToAudioWithFileName(String fileName) async {
+    if (_inputText.trim().isEmpty) return;
+
+    _isConverting = true;
+    notifyListeners();
+
+    try {
+      final audioFile = await _ttsService.convertTextToAudioWithCustomName(_inputText, fileName);
+      if (audioFile != null) {
+        _currentAudioFile = audioFile;
+        _audioHistory.insert(0, audioFile);
+        notifyListeners();
+      }
+    } catch (e) {
+      print('Erreur lors de la conversion: $e');
+    } finally {
+      _isConverting = false;
+      notifyListeners();
+    }
+  }
+
   Future<void> convertTextToAudio() async {
     if (_inputText.trim().isEmpty) return;
 
@@ -58,7 +89,7 @@ class TextToSpeechViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final audioFile = await _ttsService.convertTextToAudio(_inputText);
+      final audioFile = await _ttsService.convertTextToAudioWithPicker(_inputText);
       if (audioFile != null) {
         _currentAudioFile = audioFile;
         _audioHistory.insert(0, audioFile);
