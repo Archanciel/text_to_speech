@@ -6,6 +6,7 @@ import '../models/audio_file.dart';
 
 class TextToSpeechService {
   bool _isInitialized = false;
+  List<VoiceGoogle>? _cachedVoices; // Cache des voix
   
   // Votre clé API Google Cloud fonctionnelle
   final String _apiKey = 'AIzaSyCcj0KjrlTuj8a6JTdowDMODjZSlTGVGvo';
@@ -33,17 +34,15 @@ class TextToSpeechService {
       );
       
       print('TTS initialisé, test de connexion...');
-      _isInitialized = true;
+      _isInitialized = true; // ✅ Définir comme initialisé immédiatement
       
       // Test simple pour vérifier que ça marche
       try {
         final testVoices = await TtsGoogle.getVoices();
         print('Test réussi! Nombre de voix: ${testVoices.voices.length}');
-        _isInitialized = true;
         print('=== TTS INITIALISE AVEC SUCCES ===');
       } catch (testError) {
         print('Erreur lors du test: $testError');
-        _isInitialized = false;
       }
       
     } catch (e) {
@@ -62,18 +61,27 @@ class TextToSpeechService {
     }
 
     try {
+      print('=== DEBUT CONVERSION MP3 ===');
+      print('Texte à convertir: "$text"');
+      print('Nom de fichier: "$customFileName"');
+      
       // Ouvrir le sélecteur de fichier pour choisir l'emplacement
       String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
       
       if (selectedDirectory == null) {
+        print('Sélection de dossier annulée');
         return null;
       }
+
+      print('Dossier sélectionné: $selectedDirectory');
 
       // Obtenir les voix disponibles avec gestion d'erreur
       List<VoiceGoogle> voices;
       try {
+        print('Récupération des voix...');
         final voicesResponse = await TtsGoogle.getVoices();
         voices = voicesResponse.voices;
+        print('${voices.length} voix récupérées');
       } catch (e) {
         print('Erreur lors de la récupération des voix: $e');
         throw Exception('Impossible de récupérer les voix. Vérifiez votre clé API Google Cloud.');
@@ -90,28 +98,45 @@ class TextToSpeechService {
         throw Exception('Aucune voix disponible');
       }
 
+      print('Voix sélectionnée: ${voice.name} (${voice.locale.code})');
+
       // Utiliser le nom personnalisé fourni
       final fileName = customFileName.endsWith('.mp3') ? customFileName : '$customFileName.mp3';
       final filePath = '$selectedDirectory/$fileName';
+
+      print('Chemin final: $filePath');
 
       // Paramètres de conversion
       final ttsParams = TtsParamsGoogle(
         voice: voice,
         audioFormat: AudioOutputFormatGoogle.mp3,
         text: text,
-        rate: 'default',
-        pitch: 'default',
       );
 
+      print('Paramètres TTS configurés:');
+      print('  - Voix: ${voice.name}');
+      print('  - Format: MP3');
+      print('  - Texte: "${text.substring(0, text.length.clamp(0, 50))}${text.length > 50 ? '...' : ''}"');
+      print('  - Rate: default');
+      print('  - Pitch: default');
+
+      print('Lancement de la conversion...');
+      
       // Générer l'audio MP3
       final ttsResponse = await TtsGoogle.convertTts(ttsParams);
+      
+      print('Conversion réussie, récupération des bytes...');
       
       // Obtenir les bytes audio
       final audioBytes = ttsResponse.audio.buffer.asUint8List();
 
+      print('Bytes audio récupérés: ${audioBytes.length} bytes');
+
       // Sauvegarder le fichier MP3
       final file = File(filePath);
       await file.writeAsBytes(audioBytes);
+
+      print('Fichier MP3 sauvegardé: $filePath');
 
       // Créer l'objet AudioFile
       final audioFile = AudioFile(
@@ -122,6 +147,7 @@ class TextToSpeechService {
         sizeBytes: audioBytes.length,
       );
 
+      print('=== CONVERSION MP3 TERMINEE ===');
       return audioFile;
     } catch (e) {
       print('Erreur lors de la conversion: $e');
@@ -139,8 +165,14 @@ class TextToSpeechService {
       throw Exception('Service TTS non initialisé. Vérifiez votre clé API Google Cloud.');
     }
 
+    // Utiliser le cache si disponible
+    if (_cachedVoices != null) {
+      print('Utilisation du cache de voix (${_cachedVoices!.length} voix)');
+      return _cachedVoices!;
+    }
+
     try {
-      print('Récupération des voix...');
+      print('Récupération des voix depuis l\'API...');
       final voicesResponse = await TtsGoogle.getVoices();
       final allVoices = voicesResponse.voices;
       
@@ -151,8 +183,9 @@ class TextToSpeechService {
       print('Voix françaises trouvées: ${frenchVoices.length}');
       print('Autres voix: ${otherVoices.length}');
       
-      // Retourner les voix françaises en premier
-      return [...frenchVoices, ...otherVoices];
+      // Mettre en cache et retourner
+      _cachedVoices = [...frenchVoices, ...otherVoices];
+      return _cachedVoices!;
     } catch (e) {
       print('Erreur lors de la récupération des voix: $e');
       if (e.toString().contains('400') || e.toString().contains('Bad Request')) {
