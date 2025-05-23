@@ -92,15 +92,7 @@ class TextToSpeechViewModel extends ChangeNotifier {
 
   Future<void> speakText() async {
     if (_inputText.trim().isEmpty) return;
-    // Pour la lecture directe, on peut utiliser le TTS simple
-    // ou créer une méthode dans le service pour la lecture temporaire
-    try {
-      // Utiliser une méthode simple de lecture sans sauvegarde
-      print('Lecture du texte: $_inputText');
-      // Note: Vous pouvez implémenter une méthode de lecture directe ici
-    } catch (e) {
-      print('Erreur lors de la lecture: $e');
-    }
+    await _ttsService.speak(_inputText);
   }
 
   Future<void> stopSpeaking() async {

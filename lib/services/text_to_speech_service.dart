@@ -51,6 +51,18 @@ class TextToSpeechService {
     }
   }
 
+  Future<void> speak(String text) async {
+    if (!_isInitialized) {
+      await _initTts();
+    }
+
+    await _flutterTts.speak(text);
+  }
+
+  Future<void> stop() async {
+    await _flutterTts.stop();
+  }
+
   Future<AudioFile?> convertTextToMP3WithCustomName(String text, String customFileName) async {
     if (!_isInitialized) {
       await _initTts();
