@@ -32,8 +32,8 @@ class TextToSpeechView extends StatelessWidget {
                 _buildControlButtons(context, viewModel),
                 SizedBox(height: 20),
                 _buildCurrentAudioSection(context, viewModel),
-                SizedBox(height: 20),
-                _buildHistorySection(context, viewModel),
+                // SizedBox(height: 20),
+                // _buildHistorySection(context, viewModel),
               ],
             ),
           );
@@ -169,46 +169,12 @@ class TextToSpeechView extends StatelessWidget {
               'Fichier MP3 actuel:',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
-            SizedBox(height: 8),
-            Text(
-              viewModel.currentAudioFile!.text,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            SizedBox(height: 8),
+            SizedBox(height: 6),
             Text(
               'Taille: ${viewModel.currentAudioFile!.sizeFormatted}',
               style: TextStyle(color: Colors.grey[600]),
             ),
-            SizedBox(height: 12),
-            // Contrôles audio avec position
-            Row(
-              children: [
-                IconButton(
-                  onPressed: viewModel.playCurrentAudio,
-                  icon: Icon(Icons.play_arrow),
-                  iconSize: 32,
-                  color: Colors.green,
-                ),
-                IconButton(
-                  onPressed: viewModel.pauseAudio,
-                  icon: Icon(Icons.pause),
-                  iconSize: 32,
-                  color: Colors.orange,
-                ),
-                IconButton(
-                  onPressed: viewModel.stopAudio,
-                  icon: Icon(Icons.stop),
-                  iconSize: 32,
-                  color: Colors.red,
-                ),
-                Spacer(),
-                Text(
-                  '${viewModel.formatDuration(viewModel.currentPosition)} / ${viewModel.formatDuration(viewModel.totalDuration)}',
-                  style: TextStyle(fontSize: 12),
-                ),
-              ],
-            ),
+            SizedBox(height: 6),
           ],
         ),
       ),

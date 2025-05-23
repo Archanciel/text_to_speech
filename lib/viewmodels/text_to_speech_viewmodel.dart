@@ -97,7 +97,7 @@ class TextToSpeechViewModel extends ChangeNotifier {
 
   Future<void> stopSpeaking() async {
     try {
-      await stopAudio();
+    await _ttsService.stop();
       print('Lecture arrêtée');
     } catch (e) {
       print('Erreur lors de l\'arrêt: $e');
