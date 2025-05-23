@@ -1,0 +1,30 @@
+import 'package:audioplayers/audioplayers.dart';
+import '../models/audio_file.dart';
+
+class AudioPlayerService {
+  final AudioPlayer _audioPlayer = AudioPlayer();
+
+  Future<void> playAudioFile(AudioFile audioFile) async {
+    try {
+      await _audioPlayer.play(DeviceFileSource(audioFile.filePath));
+    } catch (e) {
+      print('Erreur lors de la lecture: $e');
+    }
+  }
+
+  Future<void> pauseAudio() async {
+    await _audioPlayer.pause();
+  }
+
+  Future<void> stopAudio() async {
+    await _audioPlayer.stop();
+  }
+
+  Stream<PlayerState> get playerStateStream => _audioPlayer.onPlayerStateChanged;
+
+  Stream<Duration> get positionStream => _audioPlayer.onPositionChanged;
+
+  Future<void> dispose() async {
+    await _audioPlayer.dispose();
+  }
+}
