@@ -1,84 +1,49 @@
 import 'dart:io';
+import 'package:cloud_text_to_speech/cloud_text_to_speech.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter_tts/flutter_tts.dart';
-import 'package:path/path.dart' as path;
-import 'package:path_provider/path_provider.dart';
-
 import '../models/audio_file.dart';
 
 class TextToSpeechService {
-  late FlutterTts _flutterTts;
   bool _isInitialized = false;
+  
+  // Vous devez obtenir une clé API Google Cloud
+  // Instructions : https://cloud.google.com/text-to-speech/docs/quickstart
+  final String _apiKey = 'AIzaSyCcj0KjrlTuj8a6JTdowDMODjZSlTGVGvo'; // À remplacer par votre vraie clé API
 
   TextToSpeechService() {
     _initTts();
   }
 
   Future<void> _initTts() async {
-    _flutterTts = FlutterTts();
-    
-    await _flutterTts.setLanguage("fr-FR");
-    await _flutterTts.setSpeechRate(0.5);
-    await _flutterTts.setVolume(1.0);
-    await _flutterTts.setPitch(1.0);
-    
-    _isInitialized = true;
-  }
-
-  Future<AudioFile?> convertTextToAudioWithPicker(String text) async {
-    if (!_isInitialized) {
-      await _initTts();
-    }
-
     try {
-      // Ouvrir le sélecteur de fichier pour choisir l'emplacement
-      String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
-      
-      if (selectedDirectory == null) {
-        // L'utilisateur a annulé la sélection
-        return null;
+      // Vérifier que la clé API n'est pas celle par défaut
+      if (_apiKey == 'AIzaSyCcj0KjrlTuj8a6JTdowDMODjZSlTGVGvo' || _apiKey.isEmpty) {
+        print('ERREUR: Veuillez configurer une vraie clé API Google Cloud');
+        return;
       }
 
-      // Demander le nom du fichier (vous pouvez implémenter un dialog pour cela)
-      // Pour l'instant, on utilise un nom par défaut avec timestamp
-      final fileName = 'audio_${DateTime.now().millisecondsSinceEpoch}.wav';
-      final filePath = '$selectedDirectory${path.separator}$fileName';
-
-      // Créer le fichier temporaire dans le répertoire de l'app
-      final tempDirectory = await getTemporaryDirectory();
-      final tempFileName = 'temp_$fileName';
-      final tempFilePath = '${tempDirectory.path}/$tempFileName';
-
-      // Générer l'audio dans le fichier temporaire
-      await _flutterTts.synthesizeToFile(text, tempFileName);
-
-      // Copier le fichier temporaire vers l'emplacement choisi
-      final tempFile = File(tempFilePath);
-      final finalFile = File(filePath);
-      
-      if (await tempFile.exists()) {
-        await tempFile.copy(filePath);
-        await tempFile.delete(); // Supprimer le fichier temporaire
-      }
-
-      // Créer l'objet AudioFile
-      final audioFile = AudioFile(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        text: text,
-        filePath: filePath,
-        createdAt: DateTime.now(),
+      // Initialiser Google Text-to-Speech
+      TtsGoogle.init(
+        apiKey: _apiKey,
+        withLogs: true,
       );
-
-      return audioFile;
+      
+      // Tester la connexion
+      print('Initialisation TTS réussie avec la clé: ${_apiKey.substring(0, 10)}...');
+      _isInitialized = true;
     } catch (e) {
-      print('Erreur lors de la conversion: $e');
-      return null;
+      print('Erreur lors de l\'initialisation TTS: $e');
+      _isInitialized = false;
     }
   }
 
-  Future<AudioFile?> convertTextToAudioWithCustomName(String text, String customFileName) async {
+  Future<AudioFile?> convertTextToMP3WithCustomName(String text, String customFileName) async {
     if (!_isInitialized) {
       await _initTts();
+    }
+
+    if (!_isInitialized) {
+      throw Exception('Service TTS non initialisé. Vérifiez votre clé API Google Cloud.');
     }
 
     try {
@@ -87,55 +52,51 @@ class TextToSpeechService {
       
       if (selectedDirectory == null) {
         return null;
+      }
+
+      // Obtenir les voix disponibles avec gestion d'erreur
+      List<VoiceGoogle> voices;
+      try {
+        final voicesResponse = await TtsGoogle.getVoices();
+        voices = voicesResponse.voices;
+      } catch (e) {
+        print('Erreur lors de la récupération des voix: $e');
+        throw Exception('Impossible de récupérer les voix. Vérifiez votre clé API Google Cloud.');
+      }
+      
+      // Sélectionner une voix française ou par défaut
+      final voice = voices.isNotEmpty 
+          ? (voices.where((element) => element.locale.code.startsWith("fr-")).isNotEmpty
+              ? voices.where((element) => element.locale.code.startsWith("fr-")).first
+              : voices.first)
+          : null;
+
+      if (voice == null) {
+        throw Exception('Aucune voix disponible');
       }
 
       // Utiliser le nom personnalisé fourni
-      final fileName = customFileName.endsWith('.wav') ? customFileName : '$customFileName.wav';
+      final fileName = customFileName.endsWith('.mp3') ? customFileName : '$customFileName.mp3';
       final filePath = '$selectedDirectory/$fileName';
 
-      // Créer le fichier temporaire
-      final tempDirectory = await getTemporaryDirectory();
-      final tempFileName = 'temp_$fileName';
-      final tempFilePath = '${tempDirectory.path}/$tempFileName';
-
-      // Générer l'audio
-      await _flutterTts.synthesizeToFile(text, tempFileName);
-
-      // Copier vers l'emplacement final
-      final tempFile = File(tempFilePath);
-      
-      if (await tempFile.exists()) {
-        await tempFile.copy(filePath);
-        await tempFile.delete();
-      }
-
-      final audioFile = AudioFile(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+      // Paramètres de conversion
+      final ttsParams = TtsParamsGoogle(
+        voice: voice,
+        audioFormat: AudioOutputFormatGoogle.mp3,
         text: text,
-        filePath: filePath,
-        createdAt: DateTime.now(),
+        rate: 'default',
+        pitch: 'default',
       );
 
-      return audioFile;
-    } catch (e) {
-      print('Erreur lors de la conversion: $e');
-      return null;
-    }
-  }
+      // Générer l'audio MP3
+      final ttsResponse = await TtsGoogle.convertTts(ttsParams);
+      
+      // Obtenir les bytes audio
+      final audioBytes = ttsResponse.audio.buffer.asUint8List();
 
-  Future<AudioFile?> convertTextToAudio(String text) async {
-    if (!_isInitialized) {
-      await _initTts();
-    }
-
-    try {
-      // Obtenir le répertoire de stockage par défaut
-      final directory = await getApplicationDocumentsDirectory();
-      final fileName = 'audio_${DateTime.now().millisecondsSinceEpoch}.wav';
-      final filePath = '${directory.path}/$fileName';
-
-      // Configurer la sortie vers un fichier
-      await _flutterTts.synthesizeToFile(text, fileName);
+      // Sauvegarder le fichier MP3
+      final file = File(filePath);
+      await file.writeAsBytes(audioBytes);
 
       // Créer l'objet AudioFile
       final audioFile = AudioFile(
@@ -143,45 +104,109 @@ class TextToSpeechService {
         text: text,
         filePath: filePath,
         createdAt: DateTime.now(),
+        sizeBytes: audioBytes.length,
       );
 
       return audioFile;
     } catch (e) {
       print('Erreur lors de la conversion: $e');
-      return null;
+      rethrow;
     }
   }
 
-  Future<void> speak(String text) async {
+  Future<List<VoiceGoogle>> getAvailableVoices() async {
     if (!_isInitialized) {
       await _initTts();
     }
 
-    await _flutterTts.speak(text);
+    if (!_isInitialized) {
+      throw Exception('Service TTS non initialisé. Vérifiez votre clé API Google Cloud.');
+    }
+
+    try {
+      final voicesResponse = await TtsGoogle.getVoices();
+      final allVoices = voicesResponse.voices;
+      
+      // Filtrer les voix françaises en premier, puis toutes les autres
+      final frenchVoices = allVoices.where((voice) => voice.locale.code.startsWith("fr-")).toList();
+      final otherVoices = allVoices.where((voice) => !voice.locale.code.startsWith("fr-")).toList();
+      
+      // Retourner les voix françaises en premier
+      return [...frenchVoices, ...otherVoices];
+    } catch (e) {
+      print('Erreur lors de la récupération des voix: $e');
+      if (e.toString().contains('400') || e.toString().contains('Bad Request')) {
+        throw Exception('Clé API invalide ou manquante. Vérifiez votre configuration Google Cloud.');
+      }
+      throw Exception('Erreur de connexion à Google Cloud: $e');
+    }
   }
 
-  Future<void> stop() async {
-    await _flutterTts.stop();
-  }
-
-  Future<List<String>> getAvailableLanguages() async {
+  Future<AudioFile?> convertTextToMP3WithVoice(String text, String fileName, VoiceGoogle voice) async {
     if (!_isInitialized) {
       await _initTts();
     }
 
-    final languages = await _flutterTts.getLanguages;
-    return List<String>.from(languages);
+    if (!_isInitialized) {
+      throw Exception('Service TTS non initialisé. Vérifiez votre clé API Google Cloud.');
+    }
+
+    try {
+      String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
+      
+      if (selectedDirectory == null) {
+        return null;
+      }
+
+      final fullFileName = fileName.endsWith('.mp3') ? fileName : '$fileName.mp3';
+      final filePath = '$selectedDirectory/$fullFileName';
+
+      final ttsParams = TtsParamsGoogle(
+        voice: voice,
+        audioFormat: AudioOutputFormatGoogle.mp3,
+        text: text,
+        rate: 'default',
+        pitch: 'default',
+      );
+
+      final ttsResponse = await TtsGoogle.convertTts(ttsParams);
+      final audioBytes = ttsResponse.audio.buffer.asUint8List();
+
+      final file = File(filePath);
+      await file.writeAsBytes(audioBytes);
+
+      final audioFile = AudioFile(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        text: text,
+        filePath: filePath,
+        createdAt: DateTime.now(),
+        sizeBytes: audioBytes.length,
+      );
+
+      return audioFile;
+    } catch (e) {
+      print('Erreur lors de la conversion: $e');
+      rethrow;
+    }
   }
 
-  Future<void> setLanguage(String language) async {
-    await _flutterTts.setLanguage(language);
-  }
+  // Méthode pour tester la clé API
+  Future<bool> testApiKey() async {
+    try {
+      if (_apiKey == 'AIzaSyCcj0KjrlTuj8a6JTdowDMODjZSlTGVGvo' || _apiKey.isEmpty) {
+        return false;
+      }
 
-  Future<void> setSpeechRate(double rate) async {
-    await _flutterTts.setSpeechRate(rate);
-  }
+      TtsGoogle.init(
+        apiKey: _apiKey,
+        withLogs: true,
+      );
 
-  Future<void> setPitch(double pitch) async {
-    await _flutterTts.setPitch(pitch);
+      final voicesResponse = await TtsGoogle.getVoices();
+      return voicesResponse.voices.isNotEmpty;
+    } catch (e) {
+      print('Test de la clé API échoué: $e');
+      return false;
+    }
   }
 }

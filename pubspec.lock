@@ -42,7 +42,7 @@ packages:
     source: hosted
     version: "6.1.1"
   archive:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: archive
       sha256: "2fde1607386ab523f7a36bb3e7edb43bd58e6edaf2ffb29d8a6d578b297fdbbd"
@@ -225,6 +225,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.1.2"
+  cloud_text_to_speech:
+    dependency: "direct main"
+    description:
+      name: cloud_text_to_speech
+      sha256: d057264b46bada671076ce4f73e7c83146e4380a6eb630dcc01e74d479744b05
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.3"
   code_builder:
     dependency: transitive
     description:
@@ -381,14 +389,6 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
-  flutter_tts:
-    dependency: "direct main"
-    description:
-      name: flutter_tts
-      sha256: baa3cb6b4990318460fe28bfa8c7869399e97223971532c02bd97c5e876aa3c5
-      url: "https://pub.dev"
-    source: hosted
-    version: "4.2.2"
   flutter_web_plugins:
     dependency: transitive
     description: flutter
@@ -548,6 +548,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "5.1.1"
+  locale_names:
+    dependency: transitive
+    description:
+      name: locale_names
+      sha256: "7a89ca54072f4f13d0f5df5a9ba69337554bf2fd057d1dd2a238898f3f159374"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.1"
   logging:
     dependency: transitive
     description:

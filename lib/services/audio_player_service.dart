@@ -24,6 +24,8 @@ class AudioPlayerService {
 
   Stream<Duration> get positionStream => _audioPlayer.onPositionChanged;
 
+  Stream<Duration> get durationStream => _audioPlayer.onDurationChanged;
+
   Future<void> dispose() async {
     await _audioPlayer.dispose();
   }
