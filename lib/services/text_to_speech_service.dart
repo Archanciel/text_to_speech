@@ -2,9 +2,11 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:cloud_text_to_speech/cloud_text_to_speech.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import '../models/audio_file.dart';
 
 class TextToSpeechService {
+  late FlutterTts _flutterTts;
   bool _isInitialized = false;
   List<VoiceGoogle>? _cachedVoices; // Cache des voix
   
@@ -49,6 +51,13 @@ class TextToSpeechService {
       print('Erreur lors de l\'initialisation TTS: $e');
       _isInitialized = false;
     }
+
+    _flutterTts = FlutterTts();
+    
+    await _flutterTts.setLanguage("fr-FR");
+    await _flutterTts.setSpeechRate(0.5);
+    await _flutterTts.setVolume(1.0);
+    await _flutterTts.setPitch(1.0);
   }
 
   Future<void> speak(String text) async {
