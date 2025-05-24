@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:cloud_text_to_speech/cloud_text_to_speech.dart';
+import '../services/logging_service.dart';
 import '../models/audio_file.dart';
 import '../services/text_to_speech_service.dart';
 import '../services/audio_player_service.dart';
@@ -50,7 +51,7 @@ class TextToSpeechViewModel extends ChangeNotifier {
 
   Future<void> _initializeViewModel() async {
     try {
-      print('=== DEBUT INITIALISATION VIEWMODEL ===');
+      logInfo('=== DEBUT INITIALISATION VIEWMODEL ===');
       final allVoices = await _ttsService.getAvailableVoices();
       
       // Filtrer pour ne garder que les voix qui ont plus de chances de fonctionner
@@ -65,7 +66,7 @@ class TextToSpeechViewModel extends ChangeNotifier {
         return voice.locale.code.startsWith('fr-');
       }).toList();
       
-      print('Voix filtrées disponibles: ${_availableVoices.length}');
+      logInfo('Voix filtrées disponibles: ${_availableVoices.length}');
       
       if (_availableVoices.isNotEmpty) {
         // Sélectionner Olivier (fr-CA) par défaut s'il est disponible
@@ -74,12 +75,12 @@ class TextToSpeechViewModel extends ChangeNotifier {
         ).toList();
         
         _selectedVoice = olivierVoice.isNotEmpty ? olivierVoice.first : _availableVoices.first;
-        print('Voix sélectionnée par défaut: ${_selectedVoice!.name} (${_selectedVoice!.locale.code})');
+        logInfo('Voix sélectionnée par défaut: ${_selectedVoice!.name} (${_selectedVoice!.locale.code})');
       }
-      print('=== VIEWMODEL INITIALISE ===');
+      logInfo('=== VIEWMODEL INITIALISE ===');
       notifyListeners();
     } catch (e) {
-      print('Erreur lors de l\'initialisation du ViewModel: $e');
+      logInfo('Erreur lors de l\'initialisation du ViewModel: $e');
       // Ne pas bloquer l'app, continuer sans voix
       notifyListeners();
     }
@@ -98,9 +99,9 @@ class TextToSpeechViewModel extends ChangeNotifier {
   Future<void> stopSpeaking() async {
     try {
     await _ttsService.stop();
-      print('Lecture arrêtée');
+      logInfo('Lecture arrêtée');
     } catch (e) {
-      print('Erreur lors de l\'arrêt: $e');
+      logInfo('Erreur lors de l\'arrêt: $e');
     }
   }
 
@@ -125,7 +126,7 @@ class TextToSpeechViewModel extends ChangeNotifier {
         notifyListeners();
       }
     } catch (e) {
-      print('Erreur lors de la conversion: $e');
+      logInfo('Erreur lors de la conversion: $e');
       rethrow;
     } finally {
       _isConverting = false;

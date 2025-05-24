@@ -1,4 +1,5 @@
 import 'package:audioplayers/audioplayers.dart';
+import 'logging_service.dart';
 import '../models/audio_file.dart';
 
 class AudioPlayerService {
@@ -8,7 +9,7 @@ class AudioPlayerService {
     try {
       await _audioPlayer.play(DeviceFileSource(audioFile.filePath));
     } catch (e) {
-      print('Erreur lors de la lecture: $e');
+      logInfo('Erreur lors de la lecture: $e');
     }
   }
 
