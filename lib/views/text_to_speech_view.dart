@@ -44,7 +44,10 @@ class TextToSpeechView extends StatelessWidget {
     );
   }
 
-  Widget _buildInputSection(BuildContext context, TextToSpeechViewModel viewModel) {
+  Widget _buildInputSection(
+    BuildContext context,
+    TextToSpeechViewModel viewModel,
+  ) {
     return Card(
       elevation: 4,
       child: Padding(
@@ -71,7 +74,10 @@ class TextToSpeechView extends StatelessWidget {
     );
   }
 
-  Widget _buildVoiceSelector(BuildContext context, TextToSpeechViewModel viewModel) {
+  Widget _buildVoiceSelector(
+    BuildContext context,
+    TextToSpeechViewModel viewModel,
+  ) {
     return Card(
       elevation: 4,
       child: Padding(
@@ -88,12 +94,20 @@ class TextToSpeechView extends StatelessWidget {
               value: viewModel.selectedVoice,
               decoration: InputDecoration(
                 border: OutlineInputBorder(),
-                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
               ),
-              items: viewModel.availableVoices.map((voice) => DropdownMenuItem(
-                value: voice,
-                child: Text('${voice.name} (${voice.locale.code})'),
-              )).toList(),
+              items:
+                  viewModel.availableVoices
+                      .map(
+                        (voice) => DropdownMenuItem(
+                          value: voice,
+                          child: Text('${voice.name} (${voice.locale.code})'),
+                        ),
+                      )
+                      .toList(),
               onChanged: (voice) {
                 if (voice != null) {
                   viewModel.setSelectedVoice(voice);
@@ -107,14 +121,20 @@ class TextToSpeechView extends StatelessWidget {
     );
   }
 
-  Widget _buildControlButtons(BuildContext context, TextToSpeechViewModel viewModel) {
+  Widget _buildControlButtons(
+    BuildContext context,
+    TextToSpeechViewModel viewModel,
+  ) {
     return Column(
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             ElevatedButton.icon(
-              onPressed: viewModel.inputText.trim().isEmpty ? null : viewModel.speakText,
+              onPressed:
+                  viewModel.inputText.trim().isEmpty
+                      ? null
+                      : viewModel.speakText,
               icon: Icon(Icons.volume_up),
               label: Text('Écouter'),
               style: ElevatedButton.styleFrom(
@@ -123,17 +143,23 @@ class TextToSpeechView extends StatelessWidget {
               ),
             ),
             ElevatedButton.icon(
-              onPressed: viewModel.inputText.trim().isEmpty
-                  ? null
-                  : () => _showFileNameDialog(context, viewModel),
-              icon: viewModel.isConverting
-                  ? SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : Icon(Icons.audiotrack),
-              label: Text(viewModel.isConverting ? 'Génération du MP3...' : 'Créer fichier MP3'),
+              onPressed:
+                  viewModel.inputText.trim().isEmpty
+                      ? null
+                      : () => _showFileNameDialog(context, viewModel),
+              icon:
+                  viewModel.isConverting
+                      ? SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                      : Icon(Icons.audiotrack),
+              label: Text(
+                viewModel.isConverting
+                    ? 'Génération du MP3...'
+                    : 'Créer fichier MP3',
+              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue,
                 foregroundColor: Colors.white,
@@ -155,7 +181,10 @@ class TextToSpeechView extends StatelessWidget {
     );
   }
 
-  Widget _buildCurrentAudioSection(BuildContext context, TextToSpeechViewModel viewModel) {
+  Widget _buildCurrentAudioSection(
+    BuildContext context,
+    TextToSpeechViewModel viewModel,
+  ) {
     if (viewModel.currentAudioFile == null) {
       return Container();
     }
@@ -165,25 +194,43 @@ class TextToSpeechView extends StatelessWidget {
       child: Padding(
         padding: EdgeInsets.all(16.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Text(
-              'Fichier MP3 actuel:',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text(
+                  'Fichier MP3 actuel:',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ],
             ),
             SizedBox(height: 6),
-            Text(
-              'Taille: ${viewModel.currentAudioFile!.sizeFormatted}',
-              style: TextStyle(color: Colors.grey[600]),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${viewModel.currentAudioFile!.filePath}',
+                  style: TextStyle(color: Colors.grey[600]),
+                ),
+                SizedBox(height: 6),
+                Text(
+                  'Taille: ${viewModel.currentAudioFile!.sizeFormatted}',
+                  style: TextStyle(color: Colors.grey[600]),
+                ),
+                SizedBox(height: 6),
+              ],
             ),
-            SizedBox(height: 6),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildHistorySection(BuildContext context, TextToSpeechViewModel viewModel) {
+  Widget _buildHistorySection(
+    BuildContext context,
+    TextToSpeechViewModel viewModel,
+  ) {
     return Expanded(
       child: Card(
         elevation: 4,
@@ -207,20 +254,25 @@ class TextToSpeechView extends StatelessWidget {
               ),
             ),
             Expanded(
-              child: viewModel.audioHistory.isEmpty
-                  ? Center(
-                      child: Text(
-                        'Aucun fichier MP3 créé',
-                        style: TextStyle(color: Colors.grey),
+              child:
+                  viewModel.audioHistory.isEmpty
+                      ? Center(
+                        child: Text(
+                          'Aucun fichier MP3 créé',
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      )
+                      : ListView.builder(
+                        itemCount: viewModel.audioHistory.length,
+                        itemBuilder: (context, index) {
+                          final audioFile = viewModel.audioHistory[index];
+                          return _buildAudioHistoryItem(
+                            context,
+                            viewModel,
+                            audioFile,
+                          );
+                        },
                       ),
-                    )
-                  : ListView.builder(
-                      itemCount: viewModel.audioHistory.length,
-                      itemBuilder: (context, index) {
-                        final audioFile = viewModel.audioHistory[index];
-                        return _buildAudioHistoryItem(context, viewModel, audioFile);
-                      },
-                    ),
             ),
           ],
         ),
@@ -228,14 +280,14 @@ class TextToSpeechView extends StatelessWidget {
     );
   }
 
-  Widget _buildAudioHistoryItem(BuildContext context, TextToSpeechViewModel viewModel, AudioFile audioFile) {
+  Widget _buildAudioHistoryItem(
+    BuildContext context,
+    TextToSpeechViewModel viewModel,
+    AudioFile audioFile,
+  ) {
     return ListTile(
       leading: Icon(Icons.audiotrack, color: Colors.blue),
-      title: Text(
-        audioFile.text,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
+      title: Text(audioFile.text, maxLines: 1, overflow: TextOverflow.ellipsis),
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -256,51 +308,55 @@ class TextToSpeechView extends StatelessWidget {
     );
   }
 
-  Future<void> _showFileNameDialog(BuildContext context, TextToSpeechViewModel viewModel) async {
+  Future<void> _showFileNameDialog(
+    BuildContext context,
+    TextToSpeechViewModel viewModel,
+  ) async {
     final TextEditingController fileNameController = TextEditingController();
-    
+
     final fileName = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Nom du fichier MP3'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('Entrez le nom du fichier MP3:'),
-            SizedBox(height: 16),
-            TextField(
-              controller: fileNameController,
-              decoration: InputDecoration(
-                hintText: 'mon_audio',
-                border: OutlineInputBorder(),
-                suffixText: '.mp3',
-              ),
-              autofocus: true,
+      builder:
+          (context) => AlertDialog(
+            title: Text('Nom du fichier MP3'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Entrez le nom du fichier MP3:'),
+                SizedBox(height: 16),
+                TextField(
+                  controller: fileNameController,
+                  decoration: InputDecoration(
+                    hintText: 'mon_audio',
+                    border: OutlineInputBorder(),
+                    suffixText: '.mp3',
+                  ),
+                  autofocus: true,
+                ),
+              ],
             ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text('Annuler'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text('Annuler'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  final name = fileNameController.text.trim();
+                  if (name.isNotEmpty) {
+                    Navigator.of(context).pop(name);
+                  }
+                },
+                child: Text('Créer MP3'),
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () {
-              final name = fileNameController.text.trim();
-              if (name.isNotEmpty) {
-                Navigator.of(context).pop(name);
-              }
-            },
-            child: Text('Créer MP3'),
-          ),
-        ],
-      ),
     );
 
     if (fileName != null && fileName.trim().isNotEmpty) {
       try {
         await viewModel.convertTextToMP3WithFileName(fileName);
-        
+
         if (viewModel.currentAudioFile != null) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -333,30 +389,31 @@ class TextToSpeechView extends StatelessWidget {
   void _showSettingsDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Configuration'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('Configuration de l\'API Google Cloud Text-to-Speech'),
-            SizedBox(height: 16),
-            Text(
-              'Pour utiliser cette application, vous devez:\n'
-              '1. Créer un projet Google Cloud\n'
-              '2. Activer l\'API Text-to-Speech\n'
-              '3. Créer une clé API\n'
-              '4. Configurer la clé dans TextToSpeechService',
-              style: TextStyle(fontSize: 12),
+      builder:
+          (context) => AlertDialog(
+            title: Text('Configuration'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Configuration de l\'API Google Cloud Text-to-Speech'),
+                SizedBox(height: 16),
+                Text(
+                  'Pour utiliser cette application, vous devez:\n'
+                  '1. Créer un projet Google Cloud\n'
+                  '2. Activer l\'API Text-to-Speech\n'
+                  '3. Créer une clé API\n'
+                  '4. Configurer la clé dans TextToSpeechService',
+                  style: TextStyle(fontSize: 12),
+                ),
+              ],
             ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text('Fermer'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text('Fermer'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 }
