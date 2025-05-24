@@ -5,6 +5,8 @@ import '../viewmodels/text_to_speech_viewmodel.dart';
 import '../models/audio_file.dart';
 
 class TextToSpeechView extends StatelessWidget {
+  const TextToSpeechView({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
