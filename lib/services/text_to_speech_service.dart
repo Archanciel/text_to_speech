@@ -70,14 +70,13 @@ class TextToSpeechService {
 
       // Sélectionner la même voix que pour les MP3 (Oliver fr-CA ou première française)
       dynamic voice;
-      final olivierVoice = voices.where((v) => 
-        v.name.toLowerCase().contains('olivier') || 
-        v.locale.code == 'fr-CA'
+      final oliverVoice = voices.where((v) => 
+        v.name.toLowerCase().contains('oliver')
       ).toList();
       
-      if (olivierVoice.isNotEmpty) {
-        voice = olivierVoice.first;
-        print('Utilisation de la voix Olivier (fr-CA) pour la lecture directe');
+      if (oliverVoice.isNotEmpty) {
+        voice = oliverVoice.first;
+        print('Utilisation de la voix oliver (fr-CA) pour la lecture directe');
       } else {
         final frenchVoices = voices.where((v) => v.locale.code.startsWith("fr-")).toList();
         voice = frenchVoices.isNotEmpty ? frenchVoices.first : voices.first;
@@ -222,14 +221,13 @@ class TextToSpeechService {
       // Sélectionner une voix française en priorisant Oliver (fr-CA)
       dynamic voice;
       
-      final olivierVoice = voices.where((v) => 
-        v.name.toLowerCase().contains('olivier') || 
-        v.locale.code == 'fr-CA'
+      final oliverVoice = voices.where((v) => 
+        v.name.toLowerCase().contains('oliver')
       ).toList();
       
-      if (olivierVoice.isNotEmpty) {
-        voice = olivierVoice.first;
-        print('Utilisation de la voix Olivier (fr-CA) - voix testée et fonctionnelle');
+      if (oliverVoice.isNotEmpty) {
+        voice = oliverVoice.first;
+        print('Utilisation de la voix oliver (fr-CA) - voix testée et fonctionnelle');
       } else {
         final frenchVoices = voices.where((v) => v.locale.code.startsWith("fr-")).toList();
         if (frenchVoices.isNotEmpty) {
