@@ -210,7 +210,7 @@ class TextToSpeechView extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${viewModel.currentAudioFile!.filePath}',
+                  viewModel.currentAudioFile!.filePath,
                   style: TextStyle(color: Colors.grey[600]),
                 ),
                 SizedBox(height: 6),
