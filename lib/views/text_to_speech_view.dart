@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_text_to_speech/cloud_text_to_speech.dart';
-import '../viewmodels/text_to_speech_viewmodel.dart';
+import '../viewmodels/text_to_speech_vm.dart';
 import '../models/audio_file.dart';
 
 class TextToSpeechView extends StatelessWidget {
@@ -21,7 +21,7 @@ class TextToSpeechView extends StatelessWidget {
           ),
         ],
       ),
-      body: Consumer<TextToSpeechViewModel>(
+      body: Consumer<TextToSpeechVM>(
         builder: (context, viewModel, child) {
           return Padding(
             padding: EdgeInsets.all(16.0),
@@ -46,7 +46,7 @@ class TextToSpeechView extends StatelessWidget {
 
   Widget _buildInputSection(
     BuildContext context,
-    TextToSpeechViewModel viewModel,
+    TextToSpeechVM viewModel,
   ) {
     return Card(
       elevation: 4,
@@ -76,7 +76,7 @@ class TextToSpeechView extends StatelessWidget {
 
   Widget _buildVoiceSelector(
     BuildContext context,
-    TextToSpeechViewModel viewModel,
+    TextToSpeechVM viewModel,
   ) {
     return Card(
       elevation: 4,
@@ -123,7 +123,7 @@ class TextToSpeechView extends StatelessWidget {
 
   Widget _buildControlButtons(
     BuildContext context,
-    TextToSpeechViewModel viewModel,
+    TextToSpeechVM viewModel,
   ) {
     return Column(
       children: [
@@ -183,7 +183,7 @@ class TextToSpeechView extends StatelessWidget {
 
   Widget _buildCurrentAudioSection(
     BuildContext context,
-    TextToSpeechViewModel viewModel,
+    TextToSpeechVM viewModel,
   ) {
     if (viewModel.currentAudioFile == null) {
       return Container();
@@ -229,7 +229,7 @@ class TextToSpeechView extends StatelessWidget {
 
   Widget _buildHistorySection(
     BuildContext context,
-    TextToSpeechViewModel viewModel,
+    TextToSpeechVM viewModel,
   ) {
     return Expanded(
       child: Card(
@@ -282,7 +282,7 @@ class TextToSpeechView extends StatelessWidget {
 
   Widget _buildAudioHistoryItem(
     BuildContext context,
-    TextToSpeechViewModel viewModel,
+    TextToSpeechVM viewModel,
     AudioFile audioFile,
   ) {
     return ListTile(
@@ -310,7 +310,7 @@ class TextToSpeechView extends StatelessWidget {
 
   Future<void> _showFileNameDialog(
     BuildContext context,
-    TextToSpeechViewModel viewModel,
+    TextToSpeechVM viewModel,
   ) async {
     final TextEditingController fileNameController = TextEditingController();
 

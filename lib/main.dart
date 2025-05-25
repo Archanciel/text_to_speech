@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:window_size/window_size.dart';
 import 'views/text_to_speech_view.dart';
-import 'viewmodels/text_to_speech_viewmodel.dart';
+import 'viewmodels/text_to_speech_vm.dart';
 
 Future<void> main() async {
   if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
@@ -57,7 +57,7 @@ class MyApp extends StatelessWidget {
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
       home: ChangeNotifierProvider(
-        create: (context) => TextToSpeechViewModel(),
+        create: (context) => TextToSpeechVM(),
         child: TextToSpeechView(),
       ),
     );

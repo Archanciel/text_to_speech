@@ -6,7 +6,7 @@ import '../models/audio_file.dart';
 import '../services/text_to_speech_service.dart';
 import '../services/audio_player_service.dart';
 
-class TextToSpeechViewModel extends ChangeNotifier {
+class TextToSpeechVM extends ChangeNotifier {
   final TextToSpeechService _ttsService = TextToSpeechService();
   final AudioPlayerService _audioPlayerService = AudioPlayerService();
 
@@ -31,7 +31,7 @@ class TextToSpeechViewModel extends ChangeNotifier {
   Duration get currentPosition => _currentPosition;
   Duration get totalDuration => _totalDuration;
 
-  TextToSpeechViewModel() {
+  TextToSpeechVM() {
     _initializeViewModel();
     _audioPlayerService.playerStateStream.listen((state) {
       _isPlaying = state == PlayerState.playing;
