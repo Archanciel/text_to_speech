@@ -4,8 +4,32 @@ import 'package:cloud_text_to_speech/cloud_text_to_speech.dart';
 import '../viewmodels/text_to_speech_vm.dart';
 import '../models/audio_file.dart';
 
-class TextToSpeechView extends StatelessWidget {
+class TextToSpeechView extends StatefulWidget {
   const TextToSpeechView({super.key});
+
+  @override
+  State<TextToSpeechView> createState() => _TextToSpeechViewState();
+}
+
+class _TextToSpeechViewState extends State<TextToSpeechView> {
+  // Add FocusNode for the name field
+  final FocusNode _nameFocusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Auto-focus and select the name field when dialog opens
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _nameFocusNode.requestFocus();
+    });
+  }
+
+  @override
+  void dispose() {
+    _nameFocusNode.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -62,7 +86,8 @@ class TextToSpeechView extends StatelessWidget {
             SizedBox(height: 8),
             TextField(
               maxLines: 4,
-              decoration: InputDecoration(
+                 focusNode: _nameFocusNode, // Add focus node
+             decoration: InputDecoration(
                 hintText: 'Entrez votre texte ici...',
                 border: OutlineInputBorder(),
               ),
