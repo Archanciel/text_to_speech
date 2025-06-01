@@ -59,11 +59,20 @@ class TextToSpeechVM extends ChangeNotifier {
     notifyListeners();
 
     try {
+      // Start speaking (this is fire-and-forget)
       await _ttsService.speak(_inputText);
-    } finally {
+      
+      // The _isSpeaking state will be set to false by:
+      // 1. stopSpeaking() method when user clicks stop
+      // 2. TTS completion callback (if implemented)
+      // 3. For now, we keep it true until manually stopped
+      
+    } catch (e) {
+      logInfo('Erreur lors de la lecture: $e');
       _isSpeaking = false;
       notifyListeners();
     }
+    // Note: Don't set _isSpeaking = false here because TTS continues in background
   }
 
   Future<void> convertTextToMP3WithFileName(String fileName) async {
@@ -106,17 +115,22 @@ class TextToSpeechVM extends ChangeNotifier {
   }
 
   Future<void> stopSpeaking() async {
+    // Stop both audio systems
     await _audioPlayerService.stopAudio();
 
     try {
       await _ttsService.stop();
-      _isSpeaking = false;
       logInfo('Lecture arrêtée');
-      notifyListeners();
     } catch (e) {
       logInfo('Erreur lors de l\'arrêt: $e');
+    } finally {
+      // Always set speaking to false when stop is called
       _isSpeaking = false;
       notifyListeners();
     }
+  }
+
+  Future<void> stopAudio() async {
+    await _audioPlayerService.stopAudio();
   }
 }
