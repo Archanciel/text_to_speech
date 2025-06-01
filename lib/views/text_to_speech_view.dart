@@ -12,6 +12,8 @@ class TextToSpeechView extends StatefulWidget {
 class _TextToSpeechViewState extends State<TextToSpeechView> {
   // Add FocusNode for the name field
   final FocusNode _nameFocusNode = FocusNode();
+  // Add TextEditingController for the text field
+  final TextEditingController _textController = TextEditingController();
 
   @override
   void initState() {
@@ -26,6 +28,7 @@ class _TextToSpeechViewState extends State<TextToSpeechView> {
   @override
   void dispose() {
     _nameFocusNode.dispose();
+    _textController.dispose(); // Dispose the controller
     super.dispose();
   }
 
@@ -72,22 +75,69 @@ class _TextToSpeechViewState extends State<TextToSpeechView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Texte à convertir en MP3:',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            // Header row with title and clear button
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Texte à convertir en MP3:',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                // Clear button
+                IconButton(
+                  onPressed: viewModel.inputText.trim().isEmpty 
+                    ? null 
+                    : () => _clearTextField(viewModel),
+                  icon: Icon(Icons.clear),
+                  tooltip: 'Effacer le texte',
+                  iconSize: 20,
+                  constraints: BoxConstraints(
+                    minWidth: 32,
+                    minHeight: 32,
+                  ),
+                  style: IconButton.styleFrom(
+                    foregroundColor: viewModel.inputText.trim().isEmpty 
+                      ? Colors.grey 
+                      : Colors.red,
+                  ),
+                ),
+              ],
             ),
             SizedBox(height: 8),
             TextField(
+              controller: _textController,
               maxLines: 4,
-              focusNode: _nameFocusNode, // Add focus node
+              focusNode: _nameFocusNode,
               decoration: InputDecoration(
                 hintText: 'Entrez votre texte ici...',
                 border: OutlineInputBorder(),
+                // Alternative: Add clear button as suffix icon in the text field
               ),
-              onChanged: viewModel.updateInputText,
+              onChanged: (text) {
+                viewModel.updateInputText(text);
+                // Keep the controller in sync
+                if (_textController.text != text) {
+                  _textController.text = text;
+                }
+              },
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  // Method to clear the text field
+  void _clearTextField(TextToSpeechVM viewModel) {
+    _textController.clear();
+    viewModel.updateInputText('');
+    
+    // Show a brief feedback
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Texte effacé'),
+        duration: Duration(seconds: 1),
+        backgroundColor: Colors.grey[600],
       ),
     );
   }
@@ -136,14 +186,19 @@ class _TextToSpeechViewState extends State<TextToSpeechView> {
           ],
         ),
         SizedBox(height: 10),
-        ElevatedButton.icon(
-          onPressed: viewModel.stopSpeaking,
-          icon: Icon(Icons.stop),
-          label: Text('Arrêter la lecture'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.red,
-            foregroundColor: Colors.white,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            ElevatedButton.icon(
+              onPressed: viewModel.stopSpeaking,
+              icon: Icon(Icons.stop),
+              label: Text('Arrêter la lecture'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ],
         ),
       ],
     );
