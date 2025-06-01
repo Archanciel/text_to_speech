@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../constants.dart';
 import '../viewmodels/text_to_speech_vm.dart';
 
 class TextToSpeechView extends StatefulWidget {
@@ -321,6 +322,8 @@ class _TextToSpeechViewState extends State<TextToSpeechView> {
         await viewModel.convertTextToMP3WithFileName(fileName);
 
         if (viewModel.currentAudioFile != null) {
+          if (!context.mounted) return;
+
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Fichier MP3 créé avec succès !'),
@@ -329,6 +332,8 @@ class _TextToSpeechViewState extends State<TextToSpeechView> {
             ),
           );
         } else {
+          if (!context.mounted) return;
+
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Création annulée'),
@@ -338,6 +343,8 @@ class _TextToSpeechViewState extends State<TextToSpeechView> {
           );
         }
       } catch (e) {
+        if (!context.mounted) return;
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Erreur: ${e.toString()}'),
@@ -358,8 +365,8 @@ class _TextToSpeechViewState extends State<TextToSpeechView> {
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('Configuration de l\'API Google Cloud Text-to-Speech'),
-                SizedBox(height: 16),
+                Text('Version Text-to-Speech: $kApplicationVersion\n\nConfiguration de l\'API Google Cloud Text-to-Speech'),
+                SizedBox(height: 11),
                 Text(
                   'Pour utiliser cette application, vous devez:\n'
                   '1. Créer un projet Google Cloud\n'
