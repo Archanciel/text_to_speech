@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -8,11 +9,8 @@ import 'logging_service.dart';
 import '../models/audio_file.dart';
 
 class TextToSpeechService {
-  AudioPlayer? _directAudioPlayer; // Pour la lecture directe
-
-  // Votre clé API Google Cloud fonctionnelle
+  AudioPlayer? _directAudioPlayer;
   final String _apiKey = 'AIzaSyCcj0KjrlTuj8a6JTdowDMODjZSlTGVGvo';
-
   FlutterTts? _flutterTts;
 
   TextToSpeechService() {
@@ -23,10 +21,7 @@ class TextToSpeechService {
     logInfo('=== FALLBACK: LECTURE AVEC FLUTTER_TTS ===');
 
     try {
-      // Initialiser flutter_tts si nécessaire
       _flutterTts ??= FlutterTts();
-
-      // Configuration française
       await _flutterTts!.setLanguage("fr-FR");
       await _flutterTts!.setSpeechRate(0.6);
       await _flutterTts!.setVolume(1.0);
@@ -35,7 +30,6 @@ class TextToSpeechService {
       logInfo('Configuration flutter_tts terminée');
       logInfo('Lecture du texte: "$text"');
 
-      // Lire le texte avec flutter_tts
       final result = await _flutterTts!.speak(text);
 
       if (result == 1) {
@@ -46,10 +40,9 @@ class TextToSpeechService {
     } catch (e) {
       logError('Erreur avec flutter_tts', e);
 
-      // Dernier recours : essayer avec voix par défaut
       try {
         logWarning('Dernier recours avec voix système...');
-        await _flutterTts!.setLanguage("en-US"); // Anglais par défaut
+        await _flutterTts!.setLanguage("en-US");
         await _flutterTts!.speak(text);
         logInfo('✅ Lecture avec voix anglaise système');
       } catch (finalError) {
@@ -59,10 +52,8 @@ class TextToSpeechService {
     }
   }
 
-  // Méthode stop() mise à jour
   Future<void> stop() async {
     try {
-      // Arrêter les deux systèmes
       await _directAudioPlayer?.stop();
       await _flutterTts?.stop();
       logInfo('Lecture arrêtée (tous systèmes)');
@@ -89,8 +80,6 @@ class TextToSpeechService {
 
       // Liste des voix à essayer (ordre de préférence)
       final voicesToTry = [
-        {'name': 'fr-CA-Standard-A', 'lang': 'fr-CA'}, // Oliver équivalent
-        {'name': 'fr-CA-Standard-B', 'lang': 'fr-CA'},
         {'name': 'fr-FR-Standard-A', 'lang': 'fr-FR'},
         {'name': 'fr-FR-Standard-B', 'lang': 'fr-FR'},
       ];
@@ -108,12 +97,18 @@ class TextToSpeechService {
             'audioConfig': {'audioEncoding': 'MP3', 'sampleRateHertz': 24000},
           };
 
+          // ENHANCED ERROR HANDLING STARTS HERE
           final response = await http.post(
             Uri.parse(
               'https://texttospeech.googleapis.com/v1/text:synthesize?key=$_apiKey',
             ),
             headers: {'Content-Type': 'application/json'},
             body: jsonEncode(requestBody),
+          ).timeout(
+            Duration(seconds: 30), // Add timeout
+            onTimeout: () {
+              throw TimeoutException('API request timed out', Duration(seconds: 30));
+            },
           );
 
           if (response.statusCode == 200) {
@@ -121,15 +116,12 @@ class TextToSpeechService {
             final audioContent = responseData['audioContent'] as String;
             final audioBytes = base64Decode(audioContent);
 
-            logInfo(
-              '✅ Succès avec ${voice['name']}: ${audioBytes.length} bytes',
-            );
+            logInfo('✅ Succès avec ${voice['name']}: ${audioBytes.length} bytes');
 
             // Sauvegarder le fichier
-            final fileName =
-                customFileName.endsWith('.mp3')
-                    ? customFileName
-                    : '$customFileName.mp3';
+            final fileName = customFileName.endsWith('.mp3')
+                ? customFileName
+                : '$customFileName.mp3';
             final filePath = '$selectedDirectory/$fileName';
 
             final file = File(filePath);
@@ -147,28 +139,95 @@ class TextToSpeechService {
 
             break; // Succès ! Sortir de la boucle
           } else {
-            logWarning('Échec ${voice['name']}: ${response.statusCode}');
-            logDebug('Erreur: ${response.body}');
+            // Handle specific HTTP status codes
+            _handleHttpError(response.statusCode, response.body, voice['name']!);
           }
-        } catch (voiceError) {
-          logWarning('Erreur avec ${voice['name']}: $voiceError');
-          continue; // Essayer la voix suivante
+
+        } on SocketException catch (e) {
+          // Network connectivity issues
+          logError('Erreur réseau avec ${voice['name']}: Vérifiez votre connexion internet', e);
+          continue;
+        } on TimeoutException catch (e) {
+          // Request timeout
+          logError('Timeout avec ${voice['name']}: La requête a pris trop de temps', e);
+          continue;
+        } on HttpException catch (e) {
+          // HTTP-specific errors
+          logError('Erreur HTTP avec ${voice['name']}: ${e.message}', e);
+          continue;
+        } on FormatException catch (e) {
+          // JSON parsing errors
+          logError('Erreur de format JSON avec ${voice['name']}: Réponse API invalide', e);
+          continue;
+        } on FileSystemException catch (e) {
+          // File system errors (writing file)
+          logError('Erreur de système de fichiers: Impossible d\'écrire le fichier', e);
+          throw Exception('Impossible de sauvegarder le fichier: ${e.message}');
+        } catch (e) {
+          // Generic error handling for this voice
+          logWarning('Erreur générique avec ${voice['name']}: $e');
+          continue;
         }
       }
 
       if (result == null) {
-        throw Exception('Toutes les voix ont échoué');
+        throw Exception('Toutes les voix ont échoué - Vérifiez votre connexion internet et votre clé API');
       }
 
       logInfo('=== CONVERSION MP3 TERMINÉE ===');
       return result;
+
+    } on SocketException catch (e) {
+      // Global network error
+      logError('Erreur de connexion réseau globale', e);
+      throw Exception('Pas de connexion internet. Vérifiez votre réseau.');
+    } on FileSystemException catch (e) {
+      // Global file system error
+      logError('Erreur de système de fichiers globale', e);
+      throw Exception('Impossible d\'accéder au système de fichiers: ${e.message}');
+    } on FormatException catch (e) {
+      // Global JSON parsing error
+      logError('Erreur de format globale', e);
+      throw Exception('Réponse de l\'API invalide. Contactez le support.');
+    } on TimeoutException catch (e) {
+      // Global timeout error
+      logError('Timeout global', e);
+      throw Exception('La requête a pris trop de temps. Réessayez plus tard.');
     } catch (e) {
+      // Catch any other unexpected errors
       logError('Erreur conversion MP3 directe', e);
-      rethrow;
+      throw Exception('Erreur inattendue lors de la conversion: ${e.toString()}');
     }
   }
 
-  // Méthode pour nettoyer les ressources
+  // Helper method to handle specific HTTP status codes
+  void _handleHttpError(int statusCode, String responseBody, String voiceName) {
+    switch (statusCode) {
+      case 400:
+        logError('Erreur 400 avec $voiceName: Requête invalide - $responseBody');
+        break;
+      case 401:
+        logError('Erreur 401 avec $voiceName: Clé API invalide ou manquante');
+        throw Exception('Clé API Google Cloud invalide. Vérifiez votre configuration.');
+      case 403:
+        logError('Erreur 403 avec $voiceName: Accès refusé - Quota dépassé ou API désactivée');
+        throw Exception('Quota Google Cloud dépassé ou API désactivée. Vérifiez votre compte.');
+      case 404:
+        logError('Erreur 404 avec $voiceName: Ressource non trouvée');
+        break;
+      case 429:
+        logError('Erreur 429 avec $voiceName: Trop de requêtes');
+        throw Exception('Trop de requêtes. Attendez quelques minutes avant de réessayer.');
+      case 500:
+      case 502:
+      case 503:
+        logError('Erreur serveur ${statusCode} avec $voiceName: Problème côté Google');
+        break;
+      default:
+        logWarning('Échec $voiceName: $statusCode - $responseBody');
+    }
+  }
+
   void dispose() {
     _directAudioPlayer?.dispose();
   }
