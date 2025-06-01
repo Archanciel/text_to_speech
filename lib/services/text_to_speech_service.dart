@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:cloud_text_to_speech/cloud_text_to_speech.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_tts/flutter_tts.dart';
@@ -9,8 +8,6 @@ import 'logging_service.dart';
 import '../models/audio_file.dart';
 
 class TextToSpeechService {
-  bool _isInitialized = false;
-  List<VoiceGoogle>? _cachedVoices; // Cache des voix
   AudioPlayer? _directAudioPlayer; // Pour la lecture directe
 
   // Votre clé API Google Cloud fonctionnelle
@@ -19,42 +16,7 @@ class TextToSpeechService {
   FlutterTts? _flutterTts;
 
   TextToSpeechService() {
-    _initTts();
     _directAudioPlayer = AudioPlayer();
-  }
-
-  Future<void> _initTts() async {
-    // Éviter la double initialisation
-    if (_isInitialized) {
-      logInfo('TTS déjà initialisé, skip');
-      return;
-    }
-
-    try {
-      logInfo('=== DEBUT INITIALISATION TTS ===');
-      logInfo('Clé API: ${_apiKey.substring(0, 15)}...');
-      logInfo('Longueur clé: ${_apiKey.length}');
-
-      // Initialiser Google Text-to-Speech
-
-      // ✅ NOUVELLE SYNTAXE (version 2.3.2)
-      TtsGoogle.init(params: InitParamsGoogle(apiKey: _apiKey), withLogs: true);
-
-      logInfo('TTS initialisé, test de connexion...');
-      _isInitialized = true;
-
-      // Test simple pour vérifier que ça marche
-      try {
-        final testVoices = await TtsGoogle.getVoices();
-        logInfo('Test réussi! Nombre de voix: ${testVoices.voices.length}');
-        logInfo('=== TTS INITIALISE AVEC SUCCES ===');
-      } catch (testError) {
-        logInfo('Erreur lors du test: $testError');
-      }
-    } catch (e) {
-      logInfo('Erreur lors de l\'initialisation TTS: $e');
-      _isInitialized = false;
-    }
   }
 
   Future<void> speak(String text) async {
@@ -106,57 +68,6 @@ class TextToSpeechService {
       logInfo('Lecture arrêtée (tous systèmes)');
     } catch (e) {
       logError('Erreur lors de l\'arrêt', e);
-    }
-  }
-
-  Future<List<VoiceGoogle>> getAvailableVoices() async {
-    // Attendre que l'initialisation soit terminée
-    if (!_isInitialized) {
-      await _initTts();
-    }
-
-    if (!_isInitialized) {
-      throw Exception(
-        'Service TTS non initialisé. Vérifiez votre clé API Google Cloud.',
-      );
-    }
-
-    // Utiliser le cache si disponible
-    if (_cachedVoices != null) {
-      logInfo('Utilisation du cache de voix (${_cachedVoices!.length} voix)');
-      return _cachedVoices!;
-    }
-
-    try {
-      logInfo('Récupération des voix depuis l\'API...');
-      final voicesResponse = await TtsGoogle.getVoices();
-      final allVoices = voicesResponse.voices;
-
-      // Filtrer les voix françaises en premier, puis toutes les autres
-      final frenchVoices =
-          allVoices
-              .where((voice) => voice.locale.code.startsWith("fr-"))
-              .toList();
-      final otherVoices =
-          allVoices
-              .where((voice) => !voice.locale.code.startsWith("fr-"))
-              .toList();
-
-      logInfo('Voix françaises trouvées: ${frenchVoices.length}');
-      logInfo('Autres voix: ${otherVoices.length}');
-
-      // Mettre en cache et retourner
-      _cachedVoices = [...frenchVoices, ...otherVoices];
-      return _cachedVoices!;
-    } catch (e) {
-      logInfo('Erreur lors de la récupération des voix: $e');
-      if (e.toString().contains('400') ||
-          e.toString().contains('Bad Request')) {
-        throw Exception(
-          'Clé API invalide ou manquante. Vérifiez votre configuration Google Cloud.',
-        );
-      }
-      throw Exception('Erreur de connexion à Google Cloud: $e');
     }
   }
 
@@ -253,61 +164,6 @@ class TextToSpeechService {
       return result;
     } catch (e) {
       logError('Erreur conversion MP3 directe', e);
-      rethrow;
-    }
-  }
-
-  Future<AudioFile?> convertTextToMP3WithVoice(
-    String text,
-    String fileName,
-    dynamic voice,
-  ) async {
-    if (!_isInitialized) {
-      await _initTts();
-    }
-
-    if (!_isInitialized) {
-      throw Exception(
-        'Service TTS non initialisé. Vérifiez votre clé API Google Cloud.',
-      );
-    }
-
-    try {
-      String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
-
-      if (selectedDirectory == null) {
-        return null;
-      }
-
-      final fullFileName =
-          fileName.endsWith('.mp3') ? fileName : '$fileName.mp3';
-      final filePath = '$selectedDirectory/$fullFileName';
-
-      final ttsParams = TtsParamsGoogle(
-        voice: voice,
-        audioFormat: AudioOutputFormatGoogle.mp3,
-        text: text,
-        rate: null,
-        pitch: null,
-      );
-
-      final ttsResponse = await TtsGoogle.convertTts(ttsParams);
-      final audioBytes = ttsResponse.audio.buffer.asUint8List();
-
-      final file = File(filePath);
-      await file.writeAsBytes(audioBytes);
-
-      final audioFile = AudioFile(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        text: text,
-        filePath: filePath,
-        createdAt: DateTime.now(),
-        sizeBytes: audioBytes.length,
-      );
-
-      return audioFile;
-    } catch (e) {
-      logInfo('Erreur lors de la conversion: $e');
       rethrow;
     }
   }

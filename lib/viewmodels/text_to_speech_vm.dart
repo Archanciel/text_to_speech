@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
-import 'package:cloud_text_to_speech/cloud_text_to_speech.dart';
 import '../services/direct_google_tts_service.dart';
 import '../services/logging_service.dart';
 import '../models/audio_file.dart';
@@ -17,8 +16,6 @@ class TextToSpeechVM extends ChangeNotifier {
   bool _isConverting = false;
   bool _isPlaying = false;
   AudioFile? _currentAudioFile;
-  List<VoiceGoogle> _availableVoices = [];
-  VoiceGoogle? _selectedVoice;
   Duration _currentPosition = Duration.zero;
   Duration _totalDuration = Duration.zero;
 
@@ -27,13 +24,10 @@ class TextToSpeechVM extends ChangeNotifier {
   bool get isConverting => _isConverting;
   bool get isPlaying => _isPlaying;
   AudioFile? get currentAudioFile => _currentAudioFile;
-  List<VoiceGoogle> get availableVoices => _availableVoices;
-  VoiceGoogle? get selectedVoice => _selectedVoice;
   Duration get currentPosition => _currentPosition;
   Duration get totalDuration => _totalDuration;
 
   TextToSpeechVM() {
-    _initializeViewModel();
     _audioPlayerService.playerStateStream.listen((state) {
       _isPlaying = state == PlayerState.playing;
       notifyListeners();
@@ -48,60 +42,6 @@ class TextToSpeechVM extends ChangeNotifier {
       _totalDuration = duration;
       notifyListeners();
     });
-  }
-
-  Future<void> _initializeViewModel() async {
-    try {
-      logInfo('=== DEBUT INITIALISATION VIEWMODEL ===');
-      final allVoices = await _ttsService.getAvailableVoices();
-
-      // Filtrer pour ne garder que les voix qui ont plus de chances de fonctionner
-      _availableVoices =
-          allVoices.where((voice) {
-            // Prioriser les voix fr-CA (Olivier) qui fonctionnent
-            if (voice.locale.code == 'fr-CA') {
-              return true;
-            }
-
-            // Inclure quelques autres voix françaises communes
-            if (voice.locale.code == 'fr-FR' &&
-                voice.name.contains('Standard')) {
-              return true;
-            }
-
-            // Exclure les voix WaveNet qui peuvent nécessiter des permissions spéciales
-            if (voice.name.contains('WaveNet')) {
-              return false;
-            }
-
-            // Inclure les autres voix françaises
-            return voice.locale.code.startsWith('fr-');
-          }).toList();
-
-      logInfo('Voix filtrées disponibles: ${_availableVoices.length}');
-
-      if (_availableVoices.isNotEmpty) {
-        // Sélectionner Olivier (fr-CA) par défaut s'il est disponible
-        final olivierVoice =
-            _availableVoices
-                .where((v) => v.name.toLowerCase().contains('oliver'))
-                .toList();
-
-        _selectedVoice =
-            olivierVoice.isNotEmpty
-                ? olivierVoice.first
-                : _availableVoices.first;
-        logInfo(
-          'Voix sélectionnée par défaut: ${_selectedVoice!.name} (${_selectedVoice!.locale.code})',
-        );
-      }
-      logInfo('=== VIEWMODEL INITIALISE ===');
-      notifyListeners();
-    } catch (e) {
-      logInfo('Erreur lors de l\'initialisation du ViewModel: $e');
-      // Ne pas bloquer l'app, continuer sans voix
-      notifyListeners();
-    }
   }
 
   void updateInputText(String text) {
@@ -168,28 +108,5 @@ class TextToSpeechVM extends ChangeNotifier {
 
   Future<void> stopAudio() async {
     await _audioPlayerService.stopAudio();
-  }
-
-  void setSelectedVoice(VoiceGoogle voice) {
-    _selectedVoice = voice;
-    notifyListeners();
-  }
-
-  String formatDuration(Duration duration) {
-    String minutes = duration.inMinutes
-        .remainder(60)
-        .toString()
-        .padLeft(2, '0');
-    String seconds = duration.inSeconds
-        .remainder(60)
-        .toString()
-        .padLeft(2, '0');
-    return '$minutes:$seconds';
-  }
-
-  @override
-  void dispose() {
-    _audioPlayerService.dispose();
-    super.dispose();
   }
 }

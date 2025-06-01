@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:cloud_text_to_speech/cloud_text_to_speech.dart';
 import '../viewmodels/text_to_speech_vm.dart';
 
 class TextToSpeechView extends StatefulWidget {
@@ -45,18 +44,16 @@ class _TextToSpeechViewState extends State<TextToSpeechView> {
         ],
       ),
       body: Consumer<TextToSpeechVM>(
-        builder: (context, viewModel, child) {
+        builder: (context, textToSpeechVMlistenTrue, child) {
           return Padding(
             padding: EdgeInsets.all(16.0),
             child: Column(
               children: [
-                _buildInputSection(context, viewModel),
+                _buildInputSection(context, textToSpeechVMlistenTrue),
                 SizedBox(height: 20),
-                _buildVoiceSelector(context, viewModel),
+                _buildControlButtons(context, textToSpeechVMlistenTrue),
                 SizedBox(height: 20),
-                _buildControlButtons(context, viewModel),
-                SizedBox(height: 20),
-                _buildCurrentAudioSection(context, viewModel),
+                _buildCurrentAudioSection(context, textToSpeechVMlistenTrue),
                 // SizedBox(height: 20),
                 // _buildHistorySection(context, viewModel),
               ],
@@ -67,10 +64,7 @@ class _TextToSpeechViewState extends State<TextToSpeechView> {
     );
   }
 
-  Widget _buildInputSection(
-    BuildContext context,
-    TextToSpeechVM viewModel,
-  ) {
+  Widget _buildInputSection(BuildContext context, TextToSpeechVM viewModel) {
     return Card(
       elevation: 4,
       child: Padding(
@@ -85,8 +79,8 @@ class _TextToSpeechViewState extends State<TextToSpeechView> {
             SizedBox(height: 8),
             TextField(
               maxLines: 4,
-                 focusNode: _nameFocusNode, // Add focus node
-             decoration: InputDecoration(
+              focusNode: _nameFocusNode, // Add focus node
+              decoration: InputDecoration(
                 hintText: 'Entrez votre texte ici...',
                 border: OutlineInputBorder(),
               ),
@@ -98,57 +92,7 @@ class _TextToSpeechViewState extends State<TextToSpeechView> {
     );
   }
 
-  Widget _buildVoiceSelector(
-    BuildContext context,
-    TextToSpeechVM viewModel,
-  ) {
-    return Card(
-      elevation: 4,
-      child: Padding(
-        padding: EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Voix sélectionnée:',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 8),
-            DropdownButtonFormField<VoiceGoogle>(
-              value: viewModel.selectedVoice,
-              decoration: InputDecoration(
-                border: OutlineInputBorder(),
-                contentPadding: EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-              ),
-              items:
-                  viewModel.availableVoices
-                      .map(
-                        (voice) => DropdownMenuItem(
-                          value: voice,
-                          child: Text('${voice.name} (${voice.locale.code})'),
-                        ),
-                      )
-                      .toList(),
-              onChanged: (voice) {
-                if (voice != null) {
-                  viewModel.setSelectedVoice(voice);
-                }
-              },
-              hint: Text('Sélectionnez une voix'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildControlButtons(
-    BuildContext context,
-    TextToSpeechVM viewModel,
-  ) {
+  Widget _buildControlButtons(BuildContext context, TextToSpeechVM viewModel) {
     return Column(
       children: [
         Row(
@@ -213,6 +157,12 @@ class _TextToSpeechViewState extends State<TextToSpeechView> {
       return Container();
     }
 
+    TextStyle mp3FileTextStyle = TextStyle(
+      color: Colors.green[700],
+      fontSize: 14,
+      fontWeight: FontWeight.bold,
+    );
+
     return Card(
       elevation: 4,
       child: Padding(
@@ -224,8 +174,12 @@ class _TextToSpeechViewState extends State<TextToSpeechView> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Text(
-                  'Fichier MP3 actuel:',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  'Fichier MP3 créé:',
+                  style: TextStyle(
+                    color: Colors.green[700],
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ],
             ),
@@ -235,12 +189,12 @@ class _TextToSpeechViewState extends State<TextToSpeechView> {
               children: [
                 Text(
                   viewModel.currentAudioFile!.filePath,
-                  style: TextStyle(color: Colors.grey[600]),
+                  style: mp3FileTextStyle,
                 ),
                 SizedBox(height: 6),
                 Text(
                   'Taille: ${viewModel.currentAudioFile!.sizeFormatted}',
-                  style: TextStyle(color: Colors.grey[600]),
+                  style: mp3FileTextStyle,
                 ),
                 SizedBox(height: 6),
               ],
