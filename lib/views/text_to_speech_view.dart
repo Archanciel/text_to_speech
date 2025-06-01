@@ -201,9 +201,6 @@ class _TextToSpeechViewState extends State<TextToSpeechView> {
                 // Dynamic color based on any playing state
                 backgroundColor: isAnythingPlaying ? Colors.red : Colors.grey,
                 foregroundColor: Colors.white,
-                // Optional: Add disabled style for clarity
-                disabledBackgroundColor: Colors.grey[400],
-                disabledForegroundColor: Colors.grey[600],
               ),
             ),
           ],

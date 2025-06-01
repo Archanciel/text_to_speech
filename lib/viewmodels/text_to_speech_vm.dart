@@ -45,6 +45,18 @@ class TextToSpeechVM extends ChangeNotifier {
       _totalDuration = duration;
       notifyListeners();
     });
+
+    // Set up TTS completion listener
+    _setupTtsListeners();
+  }
+
+  void _setupTtsListeners() {
+    // This will be called when TTS completes naturally
+    _ttsService.setCompletionHandler(() {
+      logInfo('TTS completion detected in ViewModel');
+      _isSpeaking = false;
+      notifyListeners();
+    });
   }
 
   void updateInputText(String text) {
@@ -128,6 +140,10 @@ class TextToSpeechVM extends ChangeNotifier {
       _isSpeaking = false;
       notifyListeners();
     }
+  }
+
+  Future<void> pauseAudio() async {
+    await _audioPlayerService.pauseAudio();
   }
 
   Future<void> stopAudio() async {
