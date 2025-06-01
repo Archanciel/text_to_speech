@@ -143,6 +143,9 @@ class _TextToSpeechViewState extends State<TextToSpeechView> {
   }
 
   Widget _buildControlButtons(BuildContext context, TextToSpeechVM viewModel) {
+    // Check if either TTS is speaking OR audio file is playing
+    bool isAnythingPlaying = viewModel.isPlaying || viewModel.isSpeaking;
+    
     return Column(
       children: [
         Row(
@@ -190,18 +193,29 @@ class _TextToSpeechViewState extends State<TextToSpeechView> {
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             ElevatedButton.icon(
-              onPressed: viewModel.stopSpeaking,
+              // Enable when either TTS is speaking OR audio file is playing
+              onPressed: isAnythingPlaying ? () => _stopAllAudio(viewModel) : null,
               icon: Icon(Icons.stop),
               label: Text('Arrêter la lecture'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
+                // Dynamic color based on any playing state
+                backgroundColor: isAnythingPlaying ? Colors.red : Colors.grey,
                 foregroundColor: Colors.white,
+                // Optional: Add disabled style for clarity
+                disabledBackgroundColor: Colors.grey[400],
+                disabledForegroundColor: Colors.grey[600],
               ),
             ),
           ],
         ),
       ],
     );
+  }
+
+  // Method to stop all audio (both TTS and audio file playback)
+  void _stopAllAudio(TextToSpeechVM viewModel) {
+    // Stop TTS speaking
+    viewModel.stopSpeaking();
   }
 
   Widget _buildCurrentAudioSection(

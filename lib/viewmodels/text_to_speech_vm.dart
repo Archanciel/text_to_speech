@@ -27,6 +27,9 @@ class TextToSpeechVM extends ChangeNotifier {
   Duration get currentPosition => _currentPosition;
   Duration get totalDuration => _totalDuration;
 
+  bool _isSpeaking = false;
+  bool get isSpeaking => _isSpeaking;
+
   TextToSpeechVM() {
     _audioPlayerService.playerStateStream.listen((state) {
       _isPlaying = state == PlayerState.playing;
@@ -51,15 +54,15 @@ class TextToSpeechVM extends ChangeNotifier {
 
   Future<void> speakText() async {
     if (_inputText.trim().isEmpty) return;
-    await _ttsService.speak(_inputText);
-  }
 
-  Future<void> stopSpeaking() async {
+    _isSpeaking = true;
+    notifyListeners();
+
     try {
-      await _ttsService.stop();
-      logInfo('Lecture arrêtée');
-    } catch (e) {
-      logInfo('Erreur lors de l\'arrêt: $e');
+      await _ttsService.speak(_inputText);
+    } finally {
+      _isSpeaking = false;
+      notifyListeners();
     }
   }
 
@@ -102,11 +105,18 @@ class TextToSpeechVM extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> pauseAudio() async {
-    await _audioPlayerService.pauseAudio();
-  }
-
-  Future<void> stopAudio() async {
+  Future<void> stopSpeaking() async {
     await _audioPlayerService.stopAudio();
+
+    try {
+      await _ttsService.stop();
+      _isSpeaking = false;
+      logInfo('Lecture arrêtée');
+      notifyListeners();
+    } catch (e) {
+      logInfo('Erreur lors de l\'arrêt: $e');
+      _isSpeaking = false;
+      notifyListeners();
+    }
   }
 }
