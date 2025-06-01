@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_text_to_speech/cloud_text_to_speech.dart';
 import '../viewmodels/text_to_speech_vm.dart';
-import '../models/audio_file.dart';
 
 class TextToSpeechView extends StatefulWidget {
   const TextToSpeechView({super.key});
@@ -248,87 +247,6 @@ class _TextToSpeechViewState extends State<TextToSpeechView> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildHistorySection(
-    BuildContext context,
-    TextToSpeechVM viewModel,
-  ) {
-    return Expanded(
-      child: Card(
-        elevation: 4,
-        child: Column(
-          children: [
-            Padding(
-              padding: EdgeInsets.all(16.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Fichiers MP3 créés:',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  if (viewModel.audioHistory.isNotEmpty)
-                    TextButton(
-                      onPressed: viewModel.clearHistory,
-                      child: Text('Effacer tout'),
-                    ),
-                ],
-              ),
-            ),
-            Expanded(
-              child:
-                  viewModel.audioHistory.isEmpty
-                      ? Center(
-                        child: Text(
-                          'Aucun fichier MP3 créé',
-                          style: TextStyle(color: Colors.grey),
-                        ),
-                      )
-                      : ListView.builder(
-                        itemCount: viewModel.audioHistory.length,
-                        itemBuilder: (context, index) {
-                          final audioFile = viewModel.audioHistory[index];
-                          return _buildAudioHistoryItem(
-                            context,
-                            viewModel,
-                            audioFile,
-                          );
-                        },
-                      ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAudioHistoryItem(
-    BuildContext context,
-    TextToSpeechVM viewModel,
-    AudioFile audioFile,
-  ) {
-    return ListTile(
-      leading: Icon(Icons.audiotrack, color: Colors.blue),
-      title: Text(audioFile.text, maxLines: 1, overflow: TextOverflow.ellipsis),
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '${audioFile.createdAt.day}/${audioFile.createdAt.month}/${audioFile.createdAt.year} '
-            '${audioFile.createdAt.hour}:${audioFile.createdAt.minute.toString().padLeft(2, '0')}',
-          ),
-          Text(
-            'Taille: ${audioFile.sizeFormatted}',
-            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-          ),
-        ],
-      ),
-      trailing: IconButton(
-        icon: Icon(Icons.play_arrow, color: Colors.green),
-        onPressed: () => viewModel.playAudioFile(audioFile),
       ),
     );
   }

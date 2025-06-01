@@ -37,7 +37,6 @@ dependencies:
   matcher: ^0.12.16+1
   yaml: ^3.1.2
   app_settings: ^6.1.1
-  path_provider: ^2.1.5
   flutter_tts: ^4.2.2
   cloud_text_to_speech: ^2.3.2
   logger: ^2.5.0

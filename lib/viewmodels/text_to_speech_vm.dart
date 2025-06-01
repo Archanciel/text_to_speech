@@ -9,14 +9,14 @@ import '../services/audio_player_service.dart';
 
 class TextToSpeechVM extends ChangeNotifier {
   final TextToSpeechService _ttsService = TextToSpeechService();
-  final DirectGoogleTtsService _directGoogleTtsService = DirectGoogleTtsService();
+  final DirectGoogleTtsService _directGoogleTtsService =
+      DirectGoogleTtsService();
   final AudioPlayerService _audioPlayerService = AudioPlayerService();
 
   String _inputText = '';
   bool _isConverting = false;
   bool _isPlaying = false;
   AudioFile? _currentAudioFile;
-  List<AudioFile> _audioHistory = [];
   List<VoiceGoogle> _availableVoices = [];
   VoiceGoogle? _selectedVoice;
   Duration _currentPosition = Duration.zero;
@@ -27,7 +27,6 @@ class TextToSpeechVM extends ChangeNotifier {
   bool get isConverting => _isConverting;
   bool get isPlaying => _isPlaying;
   AudioFile? get currentAudioFile => _currentAudioFile;
-  List<AudioFile> get audioHistory => _audioHistory;
   List<VoiceGoogle> get availableVoices => _availableVoices;
   VoiceGoogle? get selectedVoice => _selectedVoice;
   Duration get currentPosition => _currentPosition;
@@ -60,12 +59,21 @@ class TextToSpeechVM extends ChangeNotifier {
       _availableVoices =
           allVoices.where((voice) {
             // Prioriser les voix fr-CA (Olivier) qui fonctionnent
-            if (voice.locale.code == 'fr-CA') return true;
-            // Inclure quelques autres voix françaises communes
-            if (voice.locale.code == 'fr-FR' && voice.name.contains('Standard'))
+            if (voice.locale.code == 'fr-CA') {
               return true;
+            }
+
+            // Inclure quelques autres voix françaises communes
+            if (voice.locale.code == 'fr-FR' &&
+                voice.name.contains('Standard')) {
+              return true;
+            }
+
             // Exclure les voix WaveNet qui peuvent nécessiter des permissions spéciales
-            if (voice.name.contains('WaveNet')) return false;
+            if (voice.name.contains('WaveNet')) {
+              return false;
+            }
+
             // Inclure les autres voix françaises
             return voice.locale.code.startsWith('fr-');
           }).toList();
@@ -124,15 +132,13 @@ class TextToSpeechVM extends ChangeNotifier {
     try {
       AudioFile? audioFile;
 
-      if (_selectedVoice != null) {
-        audioFile = await _directGoogleTtsService.convertTextToMP3(_inputText, fileName);
-      } else {
-        audioFile = await _directGoogleTtsService.convertTextToMP3(_inputText, fileName);
-      }
+      audioFile = await _directGoogleTtsService.convertTextToMP3(
+        _inputText,
+        fileName,
+      );
 
       if (audioFile != null) {
         _currentAudioFile = audioFile;
-        _audioHistory.insert(0, audioFile);
         notifyListeners();
       }
     } catch (e) {
@@ -166,12 +172,6 @@ class TextToSpeechVM extends ChangeNotifier {
 
   void setSelectedVoice(VoiceGoogle voice) {
     _selectedVoice = voice;
-    notifyListeners();
-  }
-
-  void clearHistory() {
-    _audioHistory.clear();
-    _currentAudioFile = null;
     notifyListeners();
   }
 
