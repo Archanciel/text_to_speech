@@ -1,5 +1,8 @@
 import 'dart:io';
 import 'package:cloud_text_to_speech/cloud_text_to_speech.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:flutter_tts/flutter_tts.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:audioplayers/audioplayers.dart';
@@ -10,9 +13,11 @@ class TextToSpeechService {
   bool _isInitialized = false;
   List<VoiceGoogle>? _cachedVoices; // Cache des voix
   AudioPlayer? _directAudioPlayer; // Pour la lecture directe
-  
+
   // Votre clé API Google Cloud fonctionnelle
   final String _apiKey = 'AIzaSyCcj0KjrlTuj8a6JTdowDMODjZSlTGVGvo';
+
+  FlutterTts? _flutterTts;
 
   TextToSpeechService() {
     _initTts();
@@ -30,16 +35,15 @@ class TextToSpeechService {
       logInfo('=== DEBUT INITIALISATION TTS ===');
       logInfo('Clé API: ${_apiKey.substring(0, 15)}...');
       logInfo('Longueur clé: ${_apiKey.length}');
-      
+
       // Initialiser Google Text-to-Speech
-      TtsGoogle.init(
-        apiKey: _apiKey,
-        withLogs: true,
-      );
-      
+
+      // ✅ NOUVELLE SYNTAXE (version 2.3.2)
+      TtsGoogle.init(params: InitParamsGoogle(apiKey: _apiKey), withLogs: true);
+
       logInfo('TTS initialisé, test de connexion...');
       _isInitialized = true;
-      
+
       // Test simple pour vérifier que ça marche
       try {
         final testVoices = await TtsGoogle.getVoices();
@@ -48,7 +52,6 @@ class TextToSpeechService {
       } catch (testError) {
         logInfo('Erreur lors du test: $testError');
       }
-      
     } catch (e) {
       logInfo('Erreur lors de l\'initialisation TTS: $e');
       _isInitialized = false;
@@ -56,85 +59,54 @@ class TextToSpeechService {
   }
 
   Future<void> speak(String text) async {
-    if (!_isInitialized) {
-      await _initTts();
-    }
+    logInfo('=== FALLBACK: LECTURE AVEC FLUTTER_TTS ===');
 
     try {
-      logInfo('=== LECTURE DIRECTE AVEC CLOUD TTS ===');
-      
-      // Obtenir les voix disponibles
-      final voices = await getAvailableVoices();
-      if (voices.isEmpty) {
-        throw Exception('Aucune voix disponible');
-      }
+      // Initialiser flutter_tts si nécessaire
+      _flutterTts ??= FlutterTts();
 
-      // Sélectionner la même voix que pour les MP3 (Oliver fr-CA ou première française)
-      dynamic voice;
-      final oliverVoice = voices.where((v) => 
-        v.name.toLowerCase().contains('oliver')
-      ).toList();
-      
-      if (oliverVoice.isNotEmpty) {
-        voice = oliverVoice.first;
-        logInfo('Utilisation de la voix oliver (fr-CA) pour la lecture directe');
+      // Configuration française
+      await _flutterTts!.setLanguage("fr-FR");
+      await _flutterTts!.setSpeechRate(0.6);
+      await _flutterTts!.setVolume(1.0);
+      await _flutterTts!.setPitch(1.0);
+
+      logInfo('Configuration flutter_tts terminée');
+      logInfo('Lecture du texte: "$text"');
+
+      // Lire le texte avec flutter_tts
+      final result = await _flutterTts!.speak(text);
+
+      if (result == 1) {
+        logInfo('✅ Lecture flutter_tts lancée avec succès');
       } else {
-        final frenchVoices = voices.where((v) => v.locale.code.startsWith("fr-")).toList();
-        voice = frenchVoices.isNotEmpty ? frenchVoices.first : voices.first;
-        logInfo('Utilisation de la voix: ${voice.name}');
+        logWarning('⚠️ Problème avec flutter_tts, code: $result');
       }
-
-      // Paramètres de conversion pour audio temporaire
-      final ttsParams = TtsParamsGoogle(
-        voice: voice,
-        audioFormat: AudioOutputFormatGoogle.mp3,
-        text: text,
-        rate: null,
-        pitch: null,
-      );
-
-      logInfo('Génération audio temporaire...');
-      
-      // Générer l'audio avec Cloud TTS
-      final ttsResponse = await TtsGoogle.convertTts(ttsParams);
-      final audioBytes = ttsResponse.audio.buffer.asUint8List();
-
-      logInfo('Audio généré: ${audioBytes.length} bytes');
-
-      // Créer un fichier temporaire
-      final tempDir = await getTemporaryDirectory();
-      final tempFile = File('${tempDir.path}/temp_speak_${DateTime.now().millisecondsSinceEpoch}.mp3');
-      await tempFile.writeAsBytes(audioBytes);
-
-      logInfo('Lecture du fichier temporaire...');
-
-      // Lire le fichier temporaire avec AudioPlayer
-      await _directAudioPlayer?.play(DeviceFileSource(tempFile.path));
-
-      // Supprimer le fichier temporaire après un délai
-      Future.delayed(Duration(seconds: 30), () async {
-        try {
-          if (await tempFile.exists()) {
-            await tempFile.delete();
-            logInfo('Fichier temporaire supprimé');
-          }
-        } catch (e) {
-          logInfo('Erreur lors de la suppression du fichier temporaire: $e');
-        }
-      });
-
     } catch (e) {
-      logInfo('Erreur lors de la lecture: $e');
-      rethrow;
+      logError('Erreur avec flutter_tts', e);
+
+      // Dernier recours : essayer avec voix par défaut
+      try {
+        logWarning('Dernier recours avec voix système...');
+        await _flutterTts!.setLanguage("en-US"); // Anglais par défaut
+        await _flutterTts!.speak(text);
+        logInfo('✅ Lecture avec voix anglaise système');
+      } catch (finalError) {
+        logError('Toutes les options TTS ont échoué', finalError);
+        rethrow;
+      }
     }
   }
 
+  // Méthode stop() mise à jour
   Future<void> stop() async {
     try {
+      // Arrêter les deux systèmes
       await _directAudioPlayer?.stop();
-      logInfo('Lecture arrêtée');
+      await _flutterTts?.stop();
+      logInfo('Lecture arrêtée (tous systèmes)');
     } catch (e) {
-      logInfo('Erreur lors de l\'arrêt: $e');
+      logError('Erreur lors de l\'arrêt', e);
     }
   }
 
@@ -145,7 +117,9 @@ class TextToSpeechService {
     }
 
     if (!_isInitialized) {
-      throw Exception('Service TTS non initialisé. Vérifiez votre clé API Google Cloud.');
+      throw Exception(
+        'Service TTS non initialisé. Vérifiez votre clé API Google Cloud.',
+      );
     }
 
     // Utiliser le cache si disponible
@@ -158,165 +132,156 @@ class TextToSpeechService {
       logInfo('Récupération des voix depuis l\'API...');
       final voicesResponse = await TtsGoogle.getVoices();
       final allVoices = voicesResponse.voices;
-      
+
       // Filtrer les voix françaises en premier, puis toutes les autres
-      final frenchVoices = allVoices.where((voice) => voice.locale.code.startsWith("fr-")).toList();
-      final otherVoices = allVoices.where((voice) => !voice.locale.code.startsWith("fr-")).toList();
-      
+      final frenchVoices =
+          allVoices
+              .where((voice) => voice.locale.code.startsWith("fr-"))
+              .toList();
+      final otherVoices =
+          allVoices
+              .where((voice) => !voice.locale.code.startsWith("fr-"))
+              .toList();
+
       logInfo('Voix françaises trouvées: ${frenchVoices.length}');
       logInfo('Autres voix: ${otherVoices.length}');
-      
+
       // Mettre en cache et retourner
       _cachedVoices = [...frenchVoices, ...otherVoices];
       return _cachedVoices!;
     } catch (e) {
       logInfo('Erreur lors de la récupération des voix: $e');
-      if (e.toString().contains('400') || e.toString().contains('Bad Request')) {
-        throw Exception('Clé API invalide ou manquante. Vérifiez votre configuration Google Cloud.');
+      if (e.toString().contains('400') ||
+          e.toString().contains('Bad Request')) {
+        throw Exception(
+          'Clé API invalide ou manquante. Vérifiez votre configuration Google Cloud.',
+        );
       }
       throw Exception('Erreur de connexion à Google Cloud: $e');
     }
   }
 
-  Future<AudioFile?> convertTextToMP3WithCustomName(String text, String customFileName) async {
-    if (!_isInitialized) {
-      await _initTts();
-    }
-
-    if (!_isInitialized) {
-      throw Exception('Service TTS non initialisé. Vérifiez votre clé API Google Cloud.');
-    }
-
+  Future<AudioFile?> convertTextToMP3WithCustomName(
+    String text,
+    String customFileName,
+  ) async {
     try {
-      logInfo('=== DEBUT CONVERSION MP3 ===');
-      logInfo('Texte à convertir: "$text"');
-      logInfo('Longueur du texte: ${text.length} caractères');
-      logInfo('Nom de fichier: "$customFileName"');
-      
-      // Vérifier la longueur du texte
-      if (text.isEmpty) {
-        throw Exception('Le texte ne peut pas être vide');
-      }
-      
-      if (text.length > 5000) {
-        logInfo('ATTENTION: Texte très long (${text.length} caractères)');
-      }
-      
-      // Ouvrir le sélecteur de fichier pour choisir l'emplacement
+      logInfo('=== CONVERSION MP3 DIRECTE (API HTTP) ===');
+      logInfo('Texte: "$text"');
+      logInfo('Fichier: "$customFileName"');
+
+      // Choisir le dossier
       String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
-      
       if (selectedDirectory == null) {
-        logInfo('Sélection de dossier annulée');
+        logInfo('Sélection annulée');
         return null;
       }
 
-      logInfo('Dossier sélectionné: $selectedDirectory');
+      // Liste des voix à essayer (ordre de préférence)
+      final voicesToTry = [
+        {'name': 'fr-CA-Standard-A', 'lang': 'fr-CA'}, // Oliver équivalent
+        {'name': 'fr-CA-Standard-B', 'lang': 'fr-CA'},
+        {'name': 'fr-FR-Standard-A', 'lang': 'fr-FR'},
+        {'name': 'fr-FR-Standard-B', 'lang': 'fr-FR'},
+      ];
 
-      // Utiliser les voix en cache plutôt que de les récupérer à nouveau
-      final voices = await getAvailableVoices();
-      
-      if (voices.isEmpty) {
-        throw Exception('Aucune voix disponible');
-      }
+      AudioFile? result;
 
-      // Sélectionner une voix française en priorisant Oliver (fr-CA)
-      dynamic voice;
-      
-      final oliverVoice = voices.where((v) => 
-        v.name.toLowerCase().contains('oliver')
-      ).toList();
-      
-      if (oliverVoice.isNotEmpty) {
-        voice = oliverVoice.first;
-        logInfo('Utilisation de la voix oliver (fr-CA) - voix testée et fonctionnelle');
-      } else {
-        final frenchVoices = voices.where((v) => v.locale.code.startsWith("fr-")).toList();
-        if (frenchVoices.isNotEmpty) {
-          voice = frenchVoices.first;
-          logInfo('Utilisation de la voix française par défaut: ${voice.name}');
-        } else {
-          voice = voices.first;
-          logInfo('Utilisation de la première voix disponible: ${voice.name}');
+      // Essayer chaque voix jusqu'à en trouver une qui marche
+      for (final voice in voicesToTry) {
+        try {
+          logInfo('Tentative avec voix: ${voice['name']}');
+
+          final requestBody = {
+            'input': {'text': text},
+            'voice': {'languageCode': voice['lang'], 'name': voice['name']},
+            'audioConfig': {'audioEncoding': 'MP3', 'sampleRateHertz': 24000},
+          };
+
+          final response = await http.post(
+            Uri.parse(
+              'https://texttospeech.googleapis.com/v1/text:synthesize?key=$_apiKey',
+            ),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode(requestBody),
+          );
+
+          if (response.statusCode == 200) {
+            final responseData = jsonDecode(response.body);
+            final audioContent = responseData['audioContent'] as String;
+            final audioBytes = base64Decode(audioContent);
+
+            logInfo(
+              '✅ Succès avec ${voice['name']}: ${audioBytes.length} bytes',
+            );
+
+            // Sauvegarder le fichier
+            final fileName =
+                customFileName.endsWith('.mp3')
+                    ? customFileName
+                    : '$customFileName.mp3';
+            final filePath = '$selectedDirectory/$fileName';
+
+            final file = File(filePath);
+            await file.writeAsBytes(audioBytes);
+
+            logInfo('✅ Fichier sauvegardé: $filePath');
+
+            result = AudioFile(
+              id: DateTime.now().millisecondsSinceEpoch.toString(),
+              text: text,
+              filePath: filePath,
+              createdAt: DateTime.now(),
+              sizeBytes: audioBytes.length,
+            );
+
+            break; // Succès ! Sortir de la boucle
+          } else {
+            logWarning('Échec ${voice['name']}: ${response.statusCode}');
+            logDebug('Erreur: ${response.body}');
+          }
+        } catch (voiceError) {
+          logWarning('Erreur avec ${voice['name']}: $voiceError');
+          continue; // Essayer la voix suivante
         }
       }
 
-      logInfo('Voix sélectionnée: ${voice.name} (${voice.locale.code})');
+      if (result == null) {
+        throw Exception('Toutes les voix ont échoué');
+      }
 
-      // Utiliser le nom personnalisé fourni
-      final fileName = customFileName.endsWith('.mp3') ? customFileName : '$customFileName.mp3';
-      final filePath = '$selectedDirectory/$fileName';
-
-      logInfo('Chemin final: $filePath');
-
-      // Paramètres de conversion avec des valeurs simples et valides
-      final ttsParams = TtsParamsGoogle(
-        voice: voice,
-        audioFormat: AudioOutputFormatGoogle.mp3,
-        text: text,
-        rate: null, // Laisser par défaut
-        pitch: null, // Laisser par défaut
-      );
-
-      logInfo('Paramètres TTS configurés:');
-      logInfo('  - Voix: ${voice.name}');
-      logInfo('  - Locale: ${voice.locale.code}');
-      logInfo('  - Format: MP3');
-      logInfo('  - Texte: "${text.substring(0, text.length.clamp(0, 30))}${text.length > 30 ? '...' : ''}"');
-      logInfo('  - Rate: null (défaut)');
-      logInfo('  - Pitch: null (défaut)');
-
-      logInfo('Lancement de la conversion...');
-      
-      // Générer l'audio MP3
-      final ttsResponse = await TtsGoogle.convertTts(ttsParams);
-      
-      logInfo('Conversion réussie, récupération des bytes...');
-      
-      // Obtenir les bytes audio
-      final audioBytes = ttsResponse.audio.buffer.asUint8List();
-
-      logInfo('Bytes audio récupérés: ${audioBytes.length} bytes');
-
-      // Sauvegarder le fichier MP3
-      final file = File(filePath);
-      await file.writeAsBytes(audioBytes);
-
-      logInfo('Fichier MP3 sauvegardé: $filePath');
-
-      // Créer l'objet AudioFile
-      final audioFile = AudioFile(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        text: text,
-        filePath: filePath,
-        createdAt: DateTime.now(),
-        sizeBytes: audioBytes.length,
-      );
-
-      logInfo('=== CONVERSION MP3 TERMINEE ===');
-      return audioFile;
+      logInfo('=== CONVERSION MP3 TERMINÉE ===');
+      return result;
     } catch (e) {
-      logInfo('Erreur lors de la conversion: $e');
+      logError('Erreur conversion MP3 directe', e);
       rethrow;
     }
   }
 
-  Future<AudioFile?> convertTextToMP3WithVoice(String text, String fileName, dynamic voice) async {
+  Future<AudioFile?> convertTextToMP3WithVoice(
+    String text,
+    String fileName,
+    dynamic voice,
+  ) async {
     if (!_isInitialized) {
       await _initTts();
     }
 
     if (!_isInitialized) {
-      throw Exception('Service TTS non initialisé. Vérifiez votre clé API Google Cloud.');
+      throw Exception(
+        'Service TTS non initialisé. Vérifiez votre clé API Google Cloud.',
+      );
     }
 
     try {
       String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
-      
+
       if (selectedDirectory == null) {
         return null;
       }
 
-      final fullFileName = fileName.endsWith('.mp3') ? fileName : '$fileName.mp3';
+      final fullFileName =
+          fileName.endsWith('.mp3') ? fileName : '$fileName.mp3';
       final filePath = '$selectedDirectory/$fullFileName';
 
       final ttsParams = TtsParamsGoogle(

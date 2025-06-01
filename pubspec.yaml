@@ -1,32 +1,12 @@
 name: text_to_speech
 description: "Une application Flutter pour convertir du texte en MP3."
-# The following line prevents the package from being accidentally published to
-# pub.dev using `flutter pub publish`. This is preferred for private packages.
-publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+publish_to: 'none'
 
-# The following defines the version and build number for your application.
-# A version number is three numbers separated by dots, like 1.2.43
-# followed by an optional build number separated by a +.
-# Both the version and the builder number may be overridden in flutter
-# build by specifying --build-name and --build-number, respectively.
-# In Android, build-name is used as versionName while build-number used as versionCode.
-# Read more about Android versioning at https://developer.android.com/studio/publish/versioning
-# In iOS, build-name is used as CFBundleShortVersionString while build-number is used as CFBundleVersion.
-# Read more about iOS versioning at
-# https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
-# In Windows, build-name is used as the major, minor, and patch parts
-# of the product and file versions while build-number is used as the build suffix.
 version: 1.0.0+1
 
 environment:
   sdk: ^3.7.2
 
-# Dependencies specify other packages that your package needs in order to work.
-# To automatically upgrade your package dependencies to the latest versions
-# consider running `flutter pub upgrade --major-versions`. Alternatively,
-# dependencies can be manually updated by changing the version numbers below to
-# the latest version available on pub.dev. To see which dependencies have newer
-# versions available, run `flutter pub outdated`.
 dependencies:
   flutter:
     sdk: flutter
@@ -39,7 +19,7 @@ dependencies:
   intl: ^0.20.2
   audioplayers: ^6.4.0
   provider: ^6.1.5
-  http: ^1.4.0 # fixed audio download difficulties
+  http: ^1.4.0  # ← REMETTRE LA VERSION RÉCENTE
   googleapis: ^14.0.0
   googleapis_auth: ^2.0.0
   audio_video_progress_bar: ^2.0.0
@@ -51,18 +31,15 @@ dependencies:
   window_manager: ^0.5.0
   collection: ^1.18.0
   shared_preferences: ^2.2.5
-
-  # The following adds the Cupertino Icons font to your application.
-  # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
-  
   connectivity_plus: ^6.0.3
   file_picker: ^10.1.9
   matcher: ^0.12.16+1
   yaml: ^3.1.2
   app_settings: ^6.1.1
   path_provider: ^2.1.5
-  cloud_text_to_speech: ^1.1.3
+  flutter_tts: ^4.2.2
+  cloud_text_to_speech: ^2.3.2
   logger: ^2.5.0
 
 dev_dependencies:
@@ -75,7 +52,10 @@ dev_dependencies:
   mockito: ^5.4.4
   build_runner: ^2.3.3
 
-# The following section is specific to Flutter packages.
+# 🔧 FORCER LA VERSION HTTP POUR TOUS LES PACKAGES
+dependency_overrides:
+  http: ^1.4.0
+
 flutter:
   uses-material-design: true
   generate: true

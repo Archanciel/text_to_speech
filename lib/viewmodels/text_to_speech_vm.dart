@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:cloud_text_to_speech/cloud_text_to_speech.dart';
+import '../services/direct_google_tts_service.dart';
 import '../services/logging_service.dart';
 import '../models/audio_file.dart';
 import '../services/text_to_speech_service.dart';
@@ -8,6 +9,7 @@ import '../services/audio_player_service.dart';
 
 class TextToSpeechVM extends ChangeNotifier {
   final TextToSpeechService _ttsService = TextToSpeechService();
+  final DirectGoogleTtsService _directGoogleTtsService = DirectGoogleTtsService();
   final AudioPlayerService _audioPlayerService = AudioPlayerService();
 
   String _inputText = '';
@@ -53,29 +55,37 @@ class TextToSpeechVM extends ChangeNotifier {
     try {
       logInfo('=== DEBUT INITIALISATION VIEWMODEL ===');
       final allVoices = await _ttsService.getAvailableVoices();
-      
+
       // Filtrer pour ne garder que les voix qui ont plus de chances de fonctionner
-      _availableVoices = allVoices.where((voice) {
-        // Prioriser les voix fr-CA (Olivier) qui fonctionnent
-        if (voice.locale.code == 'fr-CA') return true;
-        // Inclure quelques autres voix françaises communes
-        if (voice.locale.code == 'fr-FR' && voice.name.contains('Standard')) return true;
-        // Exclure les voix WaveNet qui peuvent nécessiter des permissions spéciales
-        if (voice.name.contains('WaveNet')) return false;
-        // Inclure les autres voix françaises
-        return voice.locale.code.startsWith('fr-');
-      }).toList();
-      
+      _availableVoices =
+          allVoices.where((voice) {
+            // Prioriser les voix fr-CA (Olivier) qui fonctionnent
+            if (voice.locale.code == 'fr-CA') return true;
+            // Inclure quelques autres voix françaises communes
+            if (voice.locale.code == 'fr-FR' && voice.name.contains('Standard'))
+              return true;
+            // Exclure les voix WaveNet qui peuvent nécessiter des permissions spéciales
+            if (voice.name.contains('WaveNet')) return false;
+            // Inclure les autres voix françaises
+            return voice.locale.code.startsWith('fr-');
+          }).toList();
+
       logInfo('Voix filtrées disponibles: ${_availableVoices.length}');
-      
+
       if (_availableVoices.isNotEmpty) {
         // Sélectionner Olivier (fr-CA) par défaut s'il est disponible
-        final olivierVoice = _availableVoices.where((v) => 
-          v.name.toLowerCase().contains('oliver')
-        ).toList();
-        
-        _selectedVoice = olivierVoice.isNotEmpty ? olivierVoice.first : _availableVoices.first;
-        logInfo('Voix sélectionnée par défaut: ${_selectedVoice!.name} (${_selectedVoice!.locale.code})');
+        final olivierVoice =
+            _availableVoices
+                .where((v) => v.name.toLowerCase().contains('oliver'))
+                .toList();
+
+        _selectedVoice =
+            olivierVoice.isNotEmpty
+                ? olivierVoice.first
+                : _availableVoices.first;
+        logInfo(
+          'Voix sélectionnée par défaut: ${_selectedVoice!.name} (${_selectedVoice!.locale.code})',
+        );
       }
       logInfo('=== VIEWMODEL INITIALISE ===');
       notifyListeners();
@@ -98,7 +108,7 @@ class TextToSpeechVM extends ChangeNotifier {
 
   Future<void> stopSpeaking() async {
     try {
-    await _ttsService.stop();
+      await _ttsService.stop();
       logInfo('Lecture arrêtée');
     } catch (e) {
       logInfo('Erreur lors de l\'arrêt: $e');
@@ -113,13 +123,13 @@ class TextToSpeechVM extends ChangeNotifier {
 
     try {
       AudioFile? audioFile;
-      
+
       if (_selectedVoice != null) {
-        audioFile = await _ttsService.convertTextToMP3WithVoice(_inputText, fileName, _selectedVoice!);
+        audioFile = await _directGoogleTtsService.convertTextToMP3(_inputText, fileName);
       } else {
-        audioFile = await _ttsService.convertTextToMP3WithCustomName(_inputText, fileName);
+        audioFile = await _directGoogleTtsService.convertTextToMP3(_inputText, fileName);
       }
-      
+
       if (audioFile != null) {
         _currentAudioFile = audioFile;
         _audioHistory.insert(0, audioFile);
@@ -166,8 +176,14 @@ class TextToSpeechVM extends ChangeNotifier {
   }
 
   String formatDuration(Duration duration) {
-    String minutes = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
-    String seconds = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
+    String minutes = duration.inMinutes
+        .remainder(60)
+        .toString()
+        .padLeft(2, '0');
+    String seconds = duration.inSeconds
+        .remainder(60)
+        .toString()
+        .padLeft(2, '0');
     return '$minutes:$seconds';
   }
 

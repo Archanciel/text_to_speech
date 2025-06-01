@@ -229,10 +229,10 @@ packages:
     dependency: "direct main"
     description:
       name: cloud_text_to_speech
-      sha256: d057264b46bada671076ce4f73e7c83146e4380a6eb630dcc01e74d479744b05
+      sha256: "0d4349725c291978c3886d4006cf046bd4cfea81d9323dc6c7d3127a63f82e0a"
       url: "https://pub.dev"
     source: hosted
-    version: "1.1.3"
+    version: "2.3.2"
   code_builder:
     dependency: transitive
     description:
@@ -313,6 +313,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.7.11"
+  dio:
+    dependency: transitive
+    description:
+      name: dio
+      sha256: "7d328c4d898a61efc3cd93655a0955858e29a0aa647f0f9e02d59b3bb275e2e8"
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.0.6"
   fake_async:
     dependency: transitive
     description:
@@ -389,6 +397,14 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  flutter_tts:
+    dependency: "direct main"
+    description:
+      name: flutter_tts
+      sha256: baa3cb6b4990318460fe28bfa8c7869399e97223971532c02bd97c5e876aa3c5
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.2.2"
   flutter_web_plugins:
     dependency: transitive
     description: flutter
@@ -932,6 +948,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.0"
+  sigv4:
+    dependency: transitive
+    description:
+      name: sigv4
+      sha256: "586dfcd3b3277ec8945ee79afd6db5487c496496d659f14d5358d3f4c9d10ace"
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.0.0"
   sky_engine:
     dependency: transitive
     description: flutter
