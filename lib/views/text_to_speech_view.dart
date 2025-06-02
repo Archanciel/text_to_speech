@@ -15,6 +15,9 @@ class _TextToSpeechViewState extends State<TextToSpeechView> {
   final FocusNode _nameFocusNode = FocusNode();
   // Add TextEditingController for the text field
   final TextEditingController _textController = TextEditingController();
+  
+  // Voice selection state
+  bool _isVoiceMan = true; // Default to masculine voice
 
   @override
   void initState() {
@@ -122,9 +125,71 @@ class _TextToSpeechViewState extends State<TextToSpeechView> {
                 }
               },
             ),
+            SizedBox(height: 16),
+            // Voice Selection Checkboxes
+            _buildVoiceSelection(),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildVoiceSelection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Sélection de la voix:',
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+        ),
+        SizedBox(height: 8),
+        Row(
+          children: [
+            // Masculine Voice Checkbox
+            Expanded(
+              child: CheckboxListTile(
+                title: Text(
+                  'Voix masculine',
+                  style: TextStyle(fontSize: 13),
+                ),
+                value: _isVoiceMan,
+                onChanged: (bool? value) {
+                  if (value == true) {
+                    setState(() {
+                      _isVoiceMan = true;
+                    });
+                  }
+                },
+                controlAffinity: ListTileControlAffinity.leading,
+                contentPadding: EdgeInsets.zero,
+                dense: true,
+                activeColor: Colors.blue,
+              ),
+            ),
+            // Feminine Voice Checkbox
+            Expanded(
+              child: CheckboxListTile(
+                title: Text(
+                  'Voix féminine',
+                  style: TextStyle(fontSize: 13),
+                ),
+                value: !_isVoiceMan,
+                onChanged: (bool? value) {
+                  if (value == true) {
+                    setState(() {
+                      _isVoiceMan = false;
+                    });
+                  }
+                },
+                controlAffinity: ListTileControlAffinity.leading,
+                contentPadding: EdgeInsets.zero,
+                dense: true,
+                activeColor: Colors.pink,
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -153,10 +218,9 @@ class _TextToSpeechViewState extends State<TextToSpeechView> {
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             ElevatedButton.icon(
-              onPressed:
-                  viewModel.inputText.trim().isEmpty
-                      ? null
-                      : viewModel.speakText,
+              onPressed: viewModel.inputText.trim().isEmpty
+                  ? null
+                  : () => viewModel.speakText(isVoiceMan: _isVoiceMan), // Pass voice selection
               icon: Icon(Icons.volume_up),
               label: Text('Écouter'),
               style: ElevatedButton.styleFrom(
@@ -165,18 +229,16 @@ class _TextToSpeechViewState extends State<TextToSpeechView> {
               ),
             ),
             ElevatedButton.icon(
-              onPressed:
-                  viewModel.inputText.trim().isEmpty
-                      ? null
-                      : () => _showFileNameDialog(context, viewModel),
-              icon:
-                  viewModel.isConverting
-                      ? SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                      : Icon(Icons.audiotrack),
+              onPressed: viewModel.inputText.trim().isEmpty
+                  ? null
+                  : () => _showFileNameDialog(context, viewModel),
+              icon: viewModel.isConverting
+                  ? SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Icon(Icons.audiotrack),
               label: Text(
                 viewModel.isConverting
                     ? 'Génération du MP3...'
@@ -280,46 +342,46 @@ class _TextToSpeechViewState extends State<TextToSpeechView> {
 
     final fileName = await showDialog<String>(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: Text('Nom du fichier MP3'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text('Entrez le nom du fichier MP3:'),
-                SizedBox(height: 16),
-                TextField(
-                  controller: fileNameController,
-                  decoration: InputDecoration(
-                    hintText: 'mon_audio',
-                    border: OutlineInputBorder(),
-                    suffixText: '.mp3',
-                  ),
-                  autofocus: true,
-                ),
-              ],
+      builder: (context) => AlertDialog(
+        title: Text('Nom du fichier MP3'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Entrez le nom du fichier MP3:'),
+            SizedBox(height: 16),
+            TextField(
+              controller: fileNameController,
+              decoration: InputDecoration(
+                hintText: 'mon_audio',
+                border: OutlineInputBorder(),
+                suffixText: '.mp3',
+              ),
+              autofocus: true,
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: Text('Annuler'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  final name = fileNameController.text.trim();
-                  if (name.isNotEmpty) {
-                    Navigator.of(context).pop(name);
-                  }
-                },
-                child: Text('Créer MP3'),
-              ),
-            ],
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('Annuler'),
           ),
+          ElevatedButton(
+            onPressed: () {
+              final name = fileNameController.text.trim();
+              if (name.isNotEmpty) {
+                Navigator.of(context).pop(name);
+              }
+            },
+            child: Text('Créer MP3'),
+          ),
+        ],
+      ),
     );
 
     if (fileName != null && fileName.trim().isNotEmpty) {
       try {
-        await viewModel.convertTextToMP3WithFileName(fileName);
+        // Pass voice selection to MP3 conversion
+        await viewModel.convertTextToMP3WithFileName(fileName, isVoiceMan: _isVoiceMan);
 
         if (viewModel.currentAudioFile != null) {
           if (!context.mounted) return;
@@ -359,31 +421,30 @@ class _TextToSpeechViewState extends State<TextToSpeechView> {
   void _showSettingsDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: Text('Configuration'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text('Version Text-to-Speech: $kApplicationVersion\n\nConfiguration de l\'API Google Cloud Text-to-Speech'),
-                SizedBox(height: 11),
-                Text(
-                  'Pour utiliser cette application, vous devez:\n'
-                  '1. Créer un projet Google Cloud\n'
-                  '2. Activer l\'API Text-to-Speech\n'
-                  '3. Créer une clé API\n'
-                  '4. Configurer la clé dans TextToSpeechService',
-                  style: TextStyle(fontSize: 12),
-                ),
-              ],
+      builder: (context) => AlertDialog(
+        title: Text('Configuration'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Version Text-to-Speech: $kApplicationVersion\n\nConfiguration de l\'API Google Cloud Text-to-Speech'),
+            SizedBox(height: 11),
+            Text(
+              'Pour utiliser cette application, vous devez:\n'
+              '1. Créer un projet Google Cloud\n'
+              '2. Activer l\'API Text-to-Speech\n'
+              '3. Créer une clé API\n'
+              '4. Configurer la clé dans TextToSpeechService',
+              style: TextStyle(fontSize: 12),
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: Text('Fermer'),
-              ),
-            ],
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('Fermer'),
           ),
+        ],
+      ),
     );
   }
 }
