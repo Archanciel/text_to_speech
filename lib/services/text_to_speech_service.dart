@@ -41,7 +41,7 @@ class TextToSpeechService {
     _onSpeechComplete = onComplete;
   }
 
-  Future<void> speak(String text) async {
+  Future<void> speak(String text, bool isVoiceMan) async {
     logInfo('=== FALLBACK: LECTURE AVEC FLUTTER_TTS ===');
 
     try {
@@ -61,7 +61,6 @@ class TextToSpeechService {
       final List<Map<String, String>> frenchVoices =
           voices.where((voice) => voice['locale'] == "fr-FR").toList();
 
-      bool isVoiceMan = true;
       Map<String, String>? selectedVoice; // man voice
       double voiceSpeed; // man voice speed
 

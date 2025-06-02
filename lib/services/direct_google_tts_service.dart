@@ -13,6 +13,7 @@ class DirectGoogleTtsService {
   Future<AudioFile?> convertTextToMP3(
     String text,
     String customFileName,
+    bool isVoiceMan,
   ) async {
     try {
       logInfo('=== CONVERSION MP3 AVEC VOIX SELECTIONNEE ===');
@@ -26,7 +27,6 @@ class DirectGoogleTtsService {
         return null;
       }
 
-      bool isVoiceMan = true;
       List<Map<String, String>>? voicesToTry;
 
       if (isVoiceMan) {

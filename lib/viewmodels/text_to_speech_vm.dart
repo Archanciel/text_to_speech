@@ -64,7 +64,7 @@ class TextToSpeechVM extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> speakText() async {
+  Future<void> speakText({bool isVoiceMan = true}) async {
     if (_inputText.trim().isEmpty) return;
 
     _isSpeaking = true;
@@ -72,7 +72,7 @@ class TextToSpeechVM extends ChangeNotifier {
 
     try {
       // Start speaking (this is fire-and-forget)
-      await _ttsService.speak(_inputText);
+      await _ttsService.speak(_inputText, isVoiceMan,);
       
       // The _isSpeaking state will be set to false by:
       // 1. stopSpeaking() method when user clicks stop
@@ -87,7 +87,7 @@ class TextToSpeechVM extends ChangeNotifier {
     // Note: Don't set _isSpeaking = false here because TTS continues in background
   }
 
-  Future<void> convertTextToMP3WithFileName(String fileName) async {
+  Future<void> convertTextToMP3WithFileName(String fileName, {bool isVoiceMan = true}) async {
     if (_inputText.trim().isEmpty) return;
 
     _isConverting = true;
@@ -99,6 +99,7 @@ class TextToSpeechVM extends ChangeNotifier {
       audioFile = await _directGoogleTtsService.convertTextToMP3(
         _inputText,
         fileName,
+        isVoiceMan,
       );
 
       if (audioFile != null) {
