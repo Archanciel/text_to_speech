@@ -64,9 +64,29 @@ class TextToSpeechService {
       // Initialiser flutter_tts si nécessaire
       _flutterTts ??= FlutterTts();
 
+      // Each voice is a Map containing at least these keys: name, locale
+      // - Windows (UWP voices) only: gender, identifier
+      // - iOS, macOS only: quality, gender, identifier
+      // - Android only: quality, latency, network_required, features
+      final List<dynamic> dynamicVoices = await _flutterTts!.getVoices;
+      final List<Map<String, String>> voices =
+          dynamicVoices
+              .map((voice) => Map<String, String>.from(voice as Map))
+              .toList();
+
+      final List<Map<String, String>> frenchVoices =
+          voices
+              .where(
+                (voice) =>
+                    voice['name']!.startsWith("fr-") &&
+                    voice['locale'] == "fr-FR",
+              )
+              .toList();
+
+      await _flutterTts!.setVoice(frenchVoices[10]);
+
       // Configuration française
-      await _flutterTts!.setLanguage("fr-FR");
-      await _flutterTts!.setSpeechRate(0.6);
+      await _flutterTts!.setSpeechRate(0.4);
       await _flutterTts!.setVolume(1.0);
       await _flutterTts!.setPitch(1.0);
 
