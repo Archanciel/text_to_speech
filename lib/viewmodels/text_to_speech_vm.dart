@@ -123,6 +123,8 @@ class TextToSpeechVM extends ChangeNotifier {
     }
   }
 
+  // Update your convertTextToMP3WithFileName method in TextToSpeechVM:
+
   Future<void> convertTextToMP3WithFileName(String fileName) async {
     if (_inputText.trim().isEmpty) return;
 
@@ -132,9 +134,11 @@ class TextToSpeechVM extends ChangeNotifier {
     try {
       AudioFile? audioFile;
 
-      audioFile = await _directGoogleTtsService.convertTextToMP3(
+      // Pass the selected voice to the conversion method
+      audioFile = await _directGoogleTtsService.convertTextToMP3WithVoice(
         _inputText,
         fileName,
+        _selectedVoice, // Pass the selected voice
       );
 
       if (audioFile != null) {
