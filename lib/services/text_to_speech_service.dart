@@ -1,15 +1,10 @@
 import 'dart:io';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:flutter_tts/flutter_tts.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'logging_service.dart';
-import '../models/audio_file.dart';
 
 class TextToSpeechService {
   AudioPlayer? _directAudioPlayer;
-  final String _apiKey = 'AIzaSyCcj0KjrlTuj8a6JTdowDMODjZSlTGVGvo';
   FlutterTts? _flutterTts;
   
   // Completion callback
@@ -129,96 +124,6 @@ class TextToSpeechService {
       logInfo('Lecture arrêtée (tous systèmes)');
     } catch (e) {
       logError('Erreur lors de l\'arrêt', e);
-    }
-  }
-
-  Future<AudioFile?> convertTextToMP3WithCustomName(
-    String text,
-    String customFileName,
-  ) async {
-    try {
-      logInfo('=== CONVERSION MP3 DIRECTE (API HTTP) ===');
-      logInfo('Texte: "$text"');
-      logInfo('Fichier: "$customFileName"');
-
-      String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
-      if (selectedDirectory == null) {
-        logInfo('Sélection annulée');
-        return null;
-      }
-
-      final voicesToTry = [
-        {'name': 'fr-CA-Standard-A', 'lang': 'fr-CA'},
-        {'name': 'fr-CA-Standard-B', 'lang': 'fr-CA'},
-        {'name': 'fr-FR-Standard-A', 'lang': 'fr-FR'},
-        {'name': 'fr-FR-Standard-B', 'lang': 'fr-FR'},
-      ];
-
-      AudioFile? result;
-
-      for (final voice in voicesToTry) {
-        try {
-          logInfo('Tentative avec voix: ${voice['name']}');
-
-          final requestBody = {
-            'input': {'text': text},
-            'voice': {'languageCode': voice['lang'], 'name': voice['name']},
-            'audioConfig': {'audioEncoding': 'MP3', 'sampleRateHertz': 24000},
-          };
-
-          final response = await http.post(
-            Uri.parse(
-              'https://texttospeech.googleapis.com/v1/text:synthesize?key=$_apiKey',
-            ),
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode(requestBody),
-          );
-
-          if (response.statusCode == 200) {
-            final responseData = jsonDecode(response.body);
-            final audioContent = responseData['audioContent'] as String;
-            final audioBytes = base64Decode(audioContent);
-
-            logInfo('✅ Succès avec ${voice['name']}: ${audioBytes.length} bytes');
-
-            final fileName = customFileName.endsWith('.mp3')
-                ? customFileName
-                : '$customFileName.mp3';
-            final filePath = '$selectedDirectory/$fileName';
-
-            final file = File(filePath);
-            await file.writeAsBytes(audioBytes);
-
-            logInfo('✅ Fichier sauvegardé: $filePath');
-
-            result = AudioFile(
-              id: DateTime.now().millisecondsSinceEpoch.toString(),
-              text: text,
-              filePath: filePath,
-              createdAt: DateTime.now(),
-              sizeBytes: audioBytes.length,
-            );
-
-            break;
-          } else {
-            logWarning('Échec ${voice['name']}: ${response.statusCode}');
-            logDebug('Erreur: ${response.body}');
-          }
-        } catch (voiceError) {
-          logWarning('Erreur avec ${voice['name']}: $voiceError');
-          continue;
-        }
-      }
-
-      if (result == null) {
-        throw Exception('Toutes les voix ont échoué');
-      }
-
-      logInfo('=== CONVERSION MP3 TERMINÉE ===');
-      return result;
-    } catch (e) {
-      logError('Erreur conversion MP3 directe', e);
-      rethrow;
     }
   }
 
