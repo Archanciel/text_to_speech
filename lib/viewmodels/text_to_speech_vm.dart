@@ -3,14 +3,14 @@ import 'package:audioplayers/audioplayers.dart';
 import '../services/direct_google_tts_service.dart';
 import '../services/logging_service.dart';
 import '../models/audio_file.dart';
+import '../services/text_to_speech_audio_player_service.dart';
 import '../services/text_to_speech_service.dart';
-import '../services/audio_player_service.dart';
 
 class TextToSpeechVM extends ChangeNotifier {
   final TextToSpeechService _ttsService = TextToSpeechService();
   final DirectGoogleTtsService _directGoogleTtsService =
       DirectGoogleTtsService();
-  final AudioPlayerService _audioPlayerService = AudioPlayerService();
+  final TextToSpeechAudioPlayerService _audioPlayerService = TextToSpeechAudioPlayerService();
 
   String _inputText = '';
   bool _isConverting = false;

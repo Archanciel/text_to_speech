@@ -2,7 +2,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'logging_service.dart';
 import '../models/audio_file.dart';
 
-class AudioPlayerService {
+class TextToSpeechAudioPlayerService {
   final AudioPlayer _audioPlayer = AudioPlayer();
 
   Future<void> playAudioFile({required AudioFile audioFile}) async {
