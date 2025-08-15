@@ -59,7 +59,7 @@ class TextToSpeechVM extends ChangeNotifier {
     });
   }
 
-  void updateInputText(String text) {
+  void updateInputText({required String text}) {
     _inputText = text;
     notifyListeners();
   }
@@ -72,13 +72,12 @@ class TextToSpeechVM extends ChangeNotifier {
 
     try {
       // Start speaking (this is fire-and-forget)
-      await _ttsService.speak(_inputText, isVoiceMan,);
-      
+      await _ttsService.speak(text: _inputText, isVoiceMan: isVoiceMan);
+
       // The _isSpeaking state will be set to false by:
       // 1. stopSpeaking() method when user clicks stop
       // 2. TTS completion callback (if implemented)
       // 3. For now, we keep it true until manually stopped
-      
     } catch (e) {
       logInfo('Erreur lors de la lecture: $e');
       _isSpeaking = false;
@@ -87,7 +86,10 @@ class TextToSpeechVM extends ChangeNotifier {
     // Note: Don't set _isSpeaking = false here because TTS continues in background
   }
 
-  Future<void> convertTextToMP3WithFileName(String fileName, {bool isVoiceMan = true}) async {
+  Future<void> convertTextToMP3WithFileName({
+    required String fileName,
+    bool isVoiceMan = true,
+  }) async {
     if (_inputText.trim().isEmpty) return;
 
     _isConverting = true;
@@ -97,9 +99,9 @@ class TextToSpeechVM extends ChangeNotifier {
       AudioFile? audioFile;
 
       audioFile = await _directGoogleTtsService.convertTextToMP3(
-        _inputText,
-        fileName,
-        isVoiceMan,
+        text: _inputText,
+        customFileName: fileName,
+        isVoiceMan: isVoiceMan,
       );
 
       if (audioFile != null) {
@@ -117,13 +119,13 @@ class TextToSpeechVM extends ChangeNotifier {
 
   Future<void> playCurrentAudio() async {
     if (_currentAudioFile != null) {
-      await _audioPlayerService.playAudioFile(_currentAudioFile!);
+      await _audioPlayerService.playAudioFile(audioFile: _currentAudioFile!);
     }
   }
 
-  Future<void> playAudioFile(AudioFile audioFile) async {
+  Future<void> playAudioFile({required AudioFile audioFile}) async {
     _currentAudioFile = audioFile;
-    await _audioPlayerService.playAudioFile(audioFile);
+    await _audioPlayerService.playAudioFile(audioFile: audioFile);
     notifyListeners();
   }
 

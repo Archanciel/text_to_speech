@@ -15,7 +15,7 @@ class _TextToSpeechViewState extends State<TextToSpeechView> {
   final FocusNode _nameFocusNode = FocusNode();
   // Add TextEditingController for the text field
   final TextEditingController _textController = TextEditingController();
-  
+
   // Voice selection state
   bool _isVoiceMan = true; // Default to masculine voice
 
@@ -56,11 +56,20 @@ class _TextToSpeechViewState extends State<TextToSpeechView> {
             padding: EdgeInsets.all(16.0),
             child: Column(
               children: [
-                _buildInputSection(context, textToSpeechVMlistenTrue),
+                _buildInputSection(
+                  context: context,
+                  textToSpeechVMlistenTrue: textToSpeechVMlistenTrue,
+                ),
                 SizedBox(height: 20),
-                _buildControlButtons(context, textToSpeechVMlistenTrue),
+                _buildControlButtons(
+                  context: context,
+                  textToSpeechVMlistenTrue: textToSpeechVMlistenTrue,
+                ),
                 SizedBox(height: 20),
-                _buildCurrentAudioSection(context, textToSpeechVMlistenTrue),
+                _buildCurrentAudioSection(
+                  context: context,
+                  textToSpeechVMlistenTrue: textToSpeechVMlistenTrue,
+                ),
                 // SizedBox(height: 20),
                 // _buildHistorySection(context, viewModel),
               ],
@@ -71,7 +80,10 @@ class _TextToSpeechViewState extends State<TextToSpeechView> {
     );
   }
 
-  Widget _buildInputSection(BuildContext context, TextToSpeechVM viewModel) {
+  Widget _buildInputSection({
+    required BuildContext context,
+    required TextToSpeechVM textToSpeechVMlistenTrue,
+  }) {
     return Card(
       elevation: 4,
       child: Padding(
@@ -89,20 +101,19 @@ class _TextToSpeechViewState extends State<TextToSpeechView> {
                 ),
                 // Clear button
                 IconButton(
-                  onPressed: viewModel.inputText.trim().isEmpty 
-                    ? null 
-                    : () => _clearTextField(viewModel),
+                  onPressed:
+                      textToSpeechVMlistenTrue.inputText.trim().isEmpty
+                          ? null
+                          : () => _clearTextField(textToSpeechVMlistenTrue),
                   icon: Icon(Icons.clear),
                   tooltip: 'Effacer le texte',
                   iconSize: 20,
-                  constraints: BoxConstraints(
-                    minWidth: 32,
-                    minHeight: 32,
-                  ),
+                  constraints: BoxConstraints(minWidth: 32, minHeight: 32),
                   style: IconButton.styleFrom(
-                    foregroundColor: viewModel.inputText.trim().isEmpty 
-                      ? Colors.grey 
-                      : Colors.red,
+                    foregroundColor:
+                        textToSpeechVMlistenTrue.inputText.trim().isEmpty
+                            ? Colors.grey
+                            : Colors.red,
                   ),
                 ),
               ],
@@ -118,7 +129,7 @@ class _TextToSpeechViewState extends State<TextToSpeechView> {
                 // Alternative: Add clear button as suffix icon in the text field
               ),
               onChanged: (text) {
-                viewModel.updateInputText(text);
+                textToSpeechVMlistenTrue.updateInputText(text: text);
                 // Keep the controller in sync
                 if (_textController.text != text) {
                   _textController.text = text;
@@ -148,10 +159,7 @@ class _TextToSpeechViewState extends State<TextToSpeechView> {
             // Masculine Voice Checkbox
             Expanded(
               child: CheckboxListTile(
-                title: Text(
-                  'Voix masculine',
-                  style: TextStyle(fontSize: 13),
-                ),
+                title: Text('Voix masculine', style: TextStyle(fontSize: 13)),
                 value: _isVoiceMan,
                 onChanged: (bool? value) {
                   if (value == true) {
@@ -169,10 +177,7 @@ class _TextToSpeechViewState extends State<TextToSpeechView> {
             // Feminine Voice Checkbox
             Expanded(
               child: CheckboxListTile(
-                title: Text(
-                  'Voix féminine',
-                  style: TextStyle(fontSize: 13),
-                ),
+                title: Text('Voix féminine', style: TextStyle(fontSize: 13)),
                 value: !_isVoiceMan,
                 onChanged: (bool? value) {
                   if (value == true) {
@@ -196,8 +201,8 @@ class _TextToSpeechViewState extends State<TextToSpeechView> {
   // Method to clear the text field
   void _clearTextField(TextToSpeechVM viewModel) {
     _textController.clear();
-    viewModel.updateInputText('');
-    
+    viewModel.updateInputText(text: '');
+
     // Show a brief feedback
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -208,19 +213,27 @@ class _TextToSpeechViewState extends State<TextToSpeechView> {
     );
   }
 
-  Widget _buildControlButtons(BuildContext context, TextToSpeechVM viewModel) {
+  Widget _buildControlButtons({
+    required BuildContext context,
+    required TextToSpeechVM textToSpeechVMlistenTrue,
+  }) {
     // Check if either TTS is speaking OR audio file is playing
-    bool isAnythingPlaying = viewModel.isPlaying || viewModel.isSpeaking;
-    
+    bool isAnythingPlaying =
+        textToSpeechVMlistenTrue.isPlaying ||
+        textToSpeechVMlistenTrue.isSpeaking;
+
     return Column(
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             ElevatedButton.icon(
-              onPressed: viewModel.inputText.trim().isEmpty
-                  ? null
-                  : () => viewModel.speakText(isVoiceMan: _isVoiceMan), // Pass voice selection
+              onPressed:
+                  textToSpeechVMlistenTrue.inputText.trim().isEmpty
+                      ? null
+                      : () => textToSpeechVMlistenTrue.speakText(
+                        isVoiceMan: _isVoiceMan,
+                      ), // Pass voice selection
               icon: Icon(Icons.volume_up),
               label: Text('Écouter'),
               style: ElevatedButton.styleFrom(
@@ -229,18 +242,23 @@ class _TextToSpeechViewState extends State<TextToSpeechView> {
               ),
             ),
             ElevatedButton.icon(
-              onPressed: viewModel.inputText.trim().isEmpty
-                  ? null
-                  : () => _showFileNameDialog(context, viewModel),
-              icon: viewModel.isConverting
-                  ? SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : Icon(Icons.audiotrack),
+              onPressed:
+                  textToSpeechVMlistenTrue.inputText.trim().isEmpty
+                      ? null
+                      : () => _showFileNameDialog(
+                        context,
+                        textToSpeechVMlistenTrue,
+                      ),
+              icon:
+                  textToSpeechVMlistenTrue.isConverting
+                      ? SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                      : Icon(Icons.audiotrack),
               label: Text(
-                viewModel.isConverting
+                textToSpeechVMlistenTrue.isConverting
                     ? 'Génération du MP3...'
                     : 'Créer fichier MP3',
               ),
@@ -257,7 +275,10 @@ class _TextToSpeechViewState extends State<TextToSpeechView> {
           children: [
             ElevatedButton.icon(
               // Enable when either TTS is speaking OR audio file is playing
-              onPressed: isAnythingPlaying ? () => _stopAllAudio(viewModel) : null,
+              onPressed:
+                  isAnythingPlaying
+                      ? () => _stopAllAudio(textToSpeechVMlistenTrue)
+                      : null,
               icon: Icon(Icons.stop),
               label: Text('Arrêter la lecture'),
               style: ElevatedButton.styleFrom(
@@ -278,11 +299,11 @@ class _TextToSpeechViewState extends State<TextToSpeechView> {
     viewModel.stopSpeaking();
   }
 
-  Widget _buildCurrentAudioSection(
-    BuildContext context,
-    TextToSpeechVM viewModel,
-  ) {
-    if (viewModel.currentAudioFile == null) {
+  Widget _buildCurrentAudioSection({
+    required BuildContext context,
+    required TextToSpeechVM textToSpeechVMlistenTrue,
+  }) {
+    if (textToSpeechVMlistenTrue.currentAudioFile == null) {
       return Container();
     }
 
@@ -317,12 +338,12 @@ class _TextToSpeechViewState extends State<TextToSpeechView> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  viewModel.currentAudioFile!.filePath,
+                  textToSpeechVMlistenTrue.currentAudioFile!.filePath,
                   style: mp3FileTextStyle,
                 ),
                 SizedBox(height: 6),
                 Text(
-                  'Taille: ${viewModel.currentAudioFile!.sizeFormatted}',
+                  'Taille: ${textToSpeechVMlistenTrue.currentAudioFile!.sizeFormatted}',
                   style: mp3FileTextStyle,
                 ),
                 SizedBox(height: 6),
@@ -342,46 +363,50 @@ class _TextToSpeechViewState extends State<TextToSpeechView> {
 
     final fileName = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Nom du fichier MP3'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('Entrez le nom du fichier MP3:'),
-            SizedBox(height: 16),
-            TextField(
-              controller: fileNameController,
-              decoration: InputDecoration(
-                hintText: 'mon_audio',
-                border: OutlineInputBorder(),
-                suffixText: '.mp3',
-              ),
-              autofocus: true,
+      builder:
+          (context) => AlertDialog(
+            title: Text('Nom du fichier MP3'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Entrez le nom du fichier MP3:'),
+                SizedBox(height: 16),
+                TextField(
+                  controller: fileNameController,
+                  decoration: InputDecoration(
+                    hintText: 'mon_audio',
+                    border: OutlineInputBorder(),
+                    suffixText: '.mp3',
+                  ),
+                  autofocus: true,
+                ),
+              ],
             ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text('Annuler'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text('Annuler'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  final name = fileNameController.text.trim();
+                  if (name.isNotEmpty) {
+                    Navigator.of(context).pop(name);
+                  }
+                },
+                child: Text('Créer MP3'),
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () {
-              final name = fileNameController.text.trim();
-              if (name.isNotEmpty) {
-                Navigator.of(context).pop(name);
-              }
-            },
-            child: Text('Créer MP3'),
-          ),
-        ],
-      ),
     );
 
     if (fileName != null && fileName.trim().isNotEmpty) {
       try {
         // Pass voice selection to MP3 conversion
-        await viewModel.convertTextToMP3WithFileName(fileName, isVoiceMan: _isVoiceMan);
+        await viewModel.convertTextToMP3WithFileName(
+          fileName:  fileName,
+          isVoiceMan: _isVoiceMan,
+        );
 
         if (viewModel.currentAudioFile != null) {
           if (!context.mounted) return;
@@ -406,7 +431,7 @@ class _TextToSpeechViewState extends State<TextToSpeechView> {
         }
       } catch (e) {
         if (!context.mounted) return;
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Erreur: ${e.toString()}'),
@@ -421,30 +446,33 @@ class _TextToSpeechViewState extends State<TextToSpeechView> {
   void _showSettingsDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Configuration'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('Version Text-to-Speech: $kApplicationVersion\n\nConfiguration de l\'API Google Cloud Text-to-Speech'),
-            SizedBox(height: 11),
-            Text(
-              'Pour utiliser cette application, vous devez:\n'
-              '1. Créer un projet Google Cloud\n'
-              '2. Activer l\'API Text-to-Speech\n'
-              '3. Créer une clé API\n'
-              '4. Configurer la clé dans TextToSpeechService',
-              style: TextStyle(fontSize: 12),
+      builder:
+          (context) => AlertDialog(
+            title: Text('Configuration'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Version Text-to-Speech: $kApplicationVersion\n\nConfiguration de l\'API Google Cloud Text-to-Speech',
+                ),
+                SizedBox(height: 11),
+                Text(
+                  'Pour utiliser cette application, vous devez:\n'
+                  '1. Créer un projet Google Cloud\n'
+                  '2. Activer l\'API Text-to-Speech\n'
+                  '3. Créer une clé API\n'
+                  '4. Configurer la clé dans TextToSpeechService',
+                  style: TextStyle(fontSize: 12),
+                ),
+              ],
             ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text('Fermer'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text('Fermer'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 }

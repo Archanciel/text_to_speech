@@ -6,7 +6,7 @@ import 'logging_service.dart';
 class TextToSpeechService {
   AudioPlayer? _directAudioPlayer;
   FlutterTts? _flutterTts;
-  
+
   // Completion callback
   Function()? _onSpeechComplete;
 
@@ -18,7 +18,7 @@ class TextToSpeechService {
   // Initialize TTS with all handlers
   Future<void> _initializeTts() async {
     _flutterTts = FlutterTts();
-    
+
     // Set up completion handler
     _flutterTts!.setCompletionHandler(() {
       logInfo('TTS completed - calling completion callback');
@@ -41,7 +41,7 @@ class TextToSpeechService {
     _onSpeechComplete = onComplete;
   }
 
-  Future<void> speak(String text, bool isVoiceMan) async {
+  Future<void> speak({required String text, required bool isVoiceMan}) async {
     logInfo('=== FALLBACK: LECTURE AVEC FLUTTER_TTS ===');
 
     try {

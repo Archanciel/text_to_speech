@@ -10,11 +10,11 @@ import 'logging_service.dart';
 class DirectGoogleTtsService {
   final String _apiKey = 'AIzaSyCcj0KjrlTuj8a6JTdowDMODjZSlTGVGvo';
 
-  Future<AudioFile?> convertTextToMP3(
-    String text,
-    String customFileName,
-    bool isVoiceMan,
-  ) async {
+  Future<AudioFile?> convertTextToMP3({
+    required String text,
+    required String customFileName,
+    required bool isVoiceMan,
+  }) async {
     try {
       logInfo('=== CONVERSION MP3 AVEC VOIX SELECTIONNEE ===');
       logInfo('Texte: "$text"');

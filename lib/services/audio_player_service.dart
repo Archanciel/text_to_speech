@@ -5,7 +5,7 @@ import '../models/audio_file.dart';
 class AudioPlayerService {
   final AudioPlayer _audioPlayer = AudioPlayer();
 
-  Future<void> playAudioFile(AudioFile audioFile) async {
+  Future<void> playAudioFile({required AudioFile audioFile}) async {
     try {
       await _audioPlayer.play(DeviceFileSource(audioFile.filePath));
     } catch (e) {
@@ -21,7 +21,8 @@ class AudioPlayerService {
     await _audioPlayer.stop();
   }
 
-  Stream<PlayerState> get playerStateStream => _audioPlayer.onPlayerStateChanged;
+  Stream<PlayerState> get playerStateStream =>
+      _audioPlayer.onPlayerStateChanged;
 
   Stream<Duration> get positionStream => _audioPlayer.onPositionChanged;
 
