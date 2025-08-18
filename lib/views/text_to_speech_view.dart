@@ -213,86 +213,67 @@ class _TextToSpeechViewState extends State<TextToSpeechView> {
     );
   }
 
-  Widget _buildControlButtons({
-    required BuildContext context,
-    required TextToSpeechVM textToSpeechVMlistenTrue,
-  }) {
-    // Check if either TTS is speaking OR audio file is playing
-    bool isAnythingPlaying =
-        textToSpeechVMlistenTrue.isPlaying ||
-        textToSpeechVMlistenTrue.isSpeaking;
+Widget _buildControlButtons({
+  required BuildContext context,
+  required TextToSpeechVM textToSpeechVMlistenTrue,
+}) {
+  // Check if either TTS is speaking OR audio file is playing
+  bool isAnythingPlaying =
+      textToSpeechVMlistenTrue.isPlaying ||
+      textToSpeechVMlistenTrue.isSpeaking;
 
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            ElevatedButton.icon(
-              onPressed:
-                  textToSpeechVMlistenTrue.inputText.trim().isEmpty
-                      ? null
-                      : () => textToSpeechVMlistenTrue.speakText(
-                        isVoiceMan: _isVoiceMan,
-                      ), // Pass voice selection
-              icon: Icon(Icons.volume_up),
-              label: Text('Écouter'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-                foregroundColor: Colors.white,
-              ),
+  return Column(
+    children: [
+      Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          // Dynamic Listen/Stop button
+          ElevatedButton.icon(
+            onPressed: textToSpeechVMlistenTrue.inputText.trim().isEmpty
+                ? null
+                : isAnythingPlaying
+                    ? () => _stopAllAudio(textToSpeechVMlistenTrue)
+                    : () => textToSpeechVMlistenTrue.speakText(
+                          isVoiceMan: _isVoiceMan,
+                        ),
+            icon: Icon(isAnythingPlaying ? Icons.stop : Icons.volume_up),
+            label: Text(isAnythingPlaying ? 'Arrêter la lecture' : 'Écouter'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: isAnythingPlaying ? Colors.red : Colors.green,
+              foregroundColor: Colors.white,
             ),
-            ElevatedButton.icon(
-              onPressed:
-                  textToSpeechVMlistenTrue.inputText.trim().isEmpty
-                      ? null
-                      : () => _showFileNameDialog(
-                        context,
-                        textToSpeechVMlistenTrue,
-                      ),
-              icon:
-                  textToSpeechVMlistenTrue.isConverting
-                      ? SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                      : Icon(Icons.audiotrack),
-              label: Text(
-                textToSpeechVMlistenTrue.isConverting
-                    ? 'Génération du MP3...'
-                    : 'Créer fichier MP3',
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                foregroundColor: Colors.white,
-              ),
+          ),
+          // MP3 Creation button
+          ElevatedButton.icon(
+            onPressed: textToSpeechVMlistenTrue.inputText.trim().isEmpty
+                ? null
+                : () => _showFileNameDialog(
+                      context,
+                      textToSpeechVMlistenTrue,
+                    ),
+            icon: textToSpeechVMlistenTrue.isConverting
+                ? SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : Icon(Icons.audiotrack),
+            label: Text(
+              textToSpeechVMlistenTrue.isConverting
+                  ? 'Génération du MP3...'
+                  : 'Créer fichier MP3',
             ),
-          ],
-        ),
-        SizedBox(height: 10),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            ElevatedButton.icon(
-              // Enable when either TTS is speaking OR audio file is playing
-              onPressed:
-                  isAnythingPlaying
-                      ? () => _stopAllAudio(textToSpeechVMlistenTrue)
-                      : null,
-              icon: Icon(Icons.stop),
-              label: Text('Arrêter la lecture'),
-              style: ElevatedButton.styleFrom(
-                // Dynamic color based on any playing state
-                backgroundColor: isAnythingPlaying ? Colors.red : Colors.grey,
-                foregroundColor: Colors.white,
-              ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue,
+              foregroundColor: Colors.white,
             ),
-          ],
-        ),
-      ],
-    );
-  }
-
+          ),
+        ],
+      ),
+      // Remove the second row with the separate stop button
+    ],
+  );
+}
   // Method to stop all audio (both TTS and audio file playback)
   void _stopAllAudio(TextToSpeechVM viewModel) {
     // Stop TTS speaking
